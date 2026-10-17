@@ -90,3 +90,10 @@ Revisión efectuada mediante conectores GitHub, Railway y Vercel, sin modificar 
 - **Observabilidad:** LOG y estado mostraron 200 reales desde Railway, pero falta un ensayo dedicado de paginación/filtros/estado de error y frescura mediante el proxy Vercel.
 
 **Decisión formal G4: NO-GO**, hasta obtener autorización válida del scope Vercel, desplegar allí el frontend en el commit vigente, superar E2E y cerrar los riesgos y evidencia de gate. Esta revisión no habilita trading real ni implica aceptación automática del riesgo G3 residual.
+
+## F4 — Nuevo deployment Vercel Preview (17-10-2026)
+
+- Conector Vercel: GET proyecto/deployment/listado funciona **sin teamId**; el parámetro explícito de equipo causaba 403. No es necesaria otra instalación.
+- Desplegado GitHub `main` SHA `7da7d5c9ede06dc897fbc4a1f9bc75ef07cc9e02` como Preview `dpl_HkxT81Pguu24Ac2vACdcMZ83kFWt`, URL `https://btc-swing-v5-m2hz7rlie-algichi-7752.vercel.app`, confirmado READY, alias sin errores. Vercel Production no modificada.
+- La protección SSO del proyecto sigue activa. El verificador externo no pudo acceder a `/login` ni `/health`; **no se acredita E2E proxy/cookies a través de Vercel**.
+- Pendientes bloqueantes G4: E2E Vercel HTTPS con sesión y CSRF, recuperación real por código de un solo uso (custodiado por titular), RBAC VIEWER, expiración/rate limit, fallos API/observabilidad y aceptación documentada de riesgos. **Decisión: G4 NO-GO** hasta pruebas efectivas.
