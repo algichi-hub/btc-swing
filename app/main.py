@@ -795,6 +795,13 @@ def create_app(app_env: str | None = None) -> FastAPI:
             return RedirectResponse(url="/login", status_code=307)
         return FileResponse(PROJECT_ROOT / "app" / "static" / "index.html")
 
+    @application.get("/ops", include_in_schema=False, response_model=None)
+    def operations_page(request: Request, auth_service: AuthService = Depends(get_auth_service)) -> Response:
+        token = request.cookies.get(AUTH_COOKIE_NAME)
+        if not token or auth_service.validate_session(token) is None:
+            return RedirectResponse(url="/login", status_code=307)
+        return FileResponse(PROJECT_ROOT / "app" / "static" / "ops.html")
+
     application.include_router(operations_router)
     application.include_router(public_router)
     application.include_router(viewer_router)
