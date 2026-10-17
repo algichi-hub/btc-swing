@@ -65,3 +65,15 @@ El usuario autorizó progresar desde F3 con el riesgo de crash mid-cycle conocid
 - El acceso al despliegue protegido de Vercel desde su conector devolvió **403 forbidden** en `read_protection_bypass`; el proveedor requiere ampliar la autorización de conexión al proyecto/equipo o confirmar privilegios del usuario. **No se deshabilitó protección de Vercel** ni se aseguró que la sesión funcione a través del proxy.
 - **G4 NO-GO** a pesar de servicio API y persistencia en funcionamiento: pendiente primer administrador creado con Argon2id sin compartir contraseña, login/logout reales, CSRF con cookie de navegador por dominio Vercel, RBAC ADMIN/VIEWER y rate limiting E2E, así como permiso del conector Vercel para consultar el despliegue protegido. 
 - Engine Railway Preview continúa en **SUCCESS**; no se ha alterado Neon Production, Raspberry V4, ni activado trading real.
+
+## F4 — Recuperación de contraseña con códigos de un solo uso (17-10-2026)
+
+- [PR #14](https://github.com/algichi-hub/btc-swing/pull/14) integrada en `main` commit `955825407c6bbdf3cca51f88c91529a3bba32d53`. No se modificó el algoritmo del Engine.
+- Creada migración aditiva `migrations/0003_recovery_codes.sql` solo en la rama Neon Preview `br-old-heart-bawz12tt`. Tabla `auth_recovery_codes`, con permisos SELECT/INSERT/UPDATE/DELETE para `btc_v5_web_app` exclusivamente (no para worker). Ningún código en claro persistido.
+- Desde Ajustes, un usuario autenticado con sesión válida y token CSRF debe introducir su contraseña actual para generar 10 códigos aleatorios de 128 bits. Solo se muestran una vez. La regeneración elimina todos los anteriores.
+- Desde el login, el usuario puede introducir nombre, código y nueva contraseña (>=16 caracteres). El consumo transaccional invalida un único código, rota Argon2id y revoca todas las sesiones. Se limitan intentos por usuario, IP y global. Códigos ausentes, desconocidos o reutilizados devuelven error indistinguible; Origin es obligatorio.
+- CI en PR PASS, tras merge las dos workflows `V5 F0 baseline and security` (run 39063945688) y `F3 adversarial failure simulations` (run 39063945776) PASS.
+- Railway API Preview deployment `8b8ea282-fc7d-4702-b8eb-ed8e7e020a2c` SUCCESS; Engine deployment `7ef61201-e3dc-4479-ae4b-a51f02fe1336` permanece SUCCESS sin cambios.
+- Smoke externo HTTPS [run 39064052683](https://github.com/algichi-hub/btc-swing/actions/runs/39064052683) PASS: /health, login y JS/UI nuevos 200, /api/auth/recovery-codes/status sin sesión 401, POST /api/auth/recover sin Origin 403.
+- **Pendiente de validación manual E2E**: generar y custodiar códigos mediante la propia cuenta del usuario, comprobar un uso y rechazo del reuso, rotación de contraseña y cierre de sesión. No se generan códigos en nombre del usuario para evitar que aparezcan en herramientas/logs de soporte.
+- La publicación del frontend nuevo en Vercel permanece pendiente por 403 del conector de Vercel (scope algichi-7752). Frontend actualizado disponible en dominio HTTPS de Railway Preview. Resend descartado para esta funcionalidad. **G4 continúa NO-GO** hasta E2E manual y revisión de proxy Vercel.
