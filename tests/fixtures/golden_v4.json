@@ -1,0 +1,883 @@
+{
+  "dashboard_range": {
+    "algorithm_version": "V2.1-beta",
+    "block_reason": "NO_TECHNICAL_SETUP",
+    "coin": "BTC",
+    "market": {
+      "price": 43608.53,
+      "stoch_rsi_1h": {
+        "d": 82.81,
+        "k": 66.55,
+        "state": "NEUTRAL"
+      },
+      "volume_24h_hourly": {
+        "bars": [
+          {
+            "timestamp": "2023-11-15T19:13:20+00:00",
+            "volume_btc": 13,
+            "volume_usd": 570856.4
+          },
+          {
+            "timestamp": "2023-11-15T20:13:20+00:00",
+            "volume_btc": 14,
+            "volume_usd": 614600.01
+          },
+          {
+            "timestamp": "2023-11-15T21:13:20+00:00",
+            "volume_btc": 15,
+            "volume_usd": 658686.82
+          },
+          {
+            "timestamp": "2023-11-15T22:13:20+00:00",
+            "volume_btc": 16,
+            "volume_usd": 703141.48
+          },
+          {
+            "timestamp": "2023-11-15T23:13:20+00:00",
+            "volume_btc": 12,
+            "volume_usd": 527920.41
+          },
+          {
+            "timestamp": "2023-11-16T00:13:20+00:00",
+            "volume_btc": 13,
+            "volume_usd": 572546.22
+          },
+          {
+            "timestamp": "2023-11-16T01:13:20+00:00",
+            "volume_btc": 14,
+            "volume_usd": 617125.3
+          },
+          {
+            "timestamp": "2023-11-16T02:13:20+00:00",
+            "volume_btc": 15,
+            "volume_usd": 661485.91
+          },
+          {
+            "timestamp": "2023-11-16T03:13:20+00:00",
+            "volume_btc": 16,
+            "volume_usd": 705495.83
+          },
+          {
+            "timestamp": "2023-11-16T04:13:20+00:00",
+            "volume_btc": 12,
+            "volume_usd": 528780.35
+          },
+          {
+            "timestamp": "2023-11-16T05:13:20+00:00",
+            "volume_btc": 13,
+            "volume_usd": 572268.41
+          },
+          {
+            "timestamp": "2023-11-16T06:13:20+00:00",
+            "volume_btc": 14,
+            "volume_usd": 615596.94
+          },
+          {
+            "timestamp": "2023-11-16T07:13:20+00:00",
+            "volume_btc": 15,
+            "volume_usd": 658932.32
+          },
+          {
+            "timestamp": "2023-11-16T08:13:20+00:00",
+            "volume_btc": 16,
+            "volume_usd": 702461.76
+          },
+          {
+            "timestamp": "2023-11-16T09:13:20+00:00",
+            "volume_btc": 12,
+            "volume_usd": 526829.25
+          },
+          {
+            "timestamp": "2023-11-16T10:13:20+00:00",
+            "volume_btc": 13,
+            "volume_usd": 571023.72
+          },
+          {
+            "timestamp": "2023-11-16T11:13:20+00:00",
+            "volume_btc": 14,
+            "volume_usd": 615520.53
+          },
+          {
+            "timestamp": "2023-11-16T12:13:20+00:00",
+            "volume_btc": 15,
+            "volume_usd": 660224.82
+          },
+          {
+            "timestamp": "2023-11-16T13:13:20+00:00",
+            "volume_btc": 16,
+            "volume_usd": 704968.86
+          },
+          {
+            "timestamp": "2023-11-16T14:13:20+00:00",
+            "volume_btc": 12,
+            "volume_usd": 529095.53
+          },
+          {
+            "timestamp": "2023-11-16T15:13:20+00:00",
+            "volume_btc": 13,
+            "volume_usd": 573295.88
+          },
+          {
+            "timestamp": "2023-11-16T16:13:20+00:00",
+            "volume_btc": 14,
+            "volume_usd": 617171.32
+          },
+          {
+            "timestamp": "2023-11-16T17:13:20+00:00",
+            "volume_btc": 15,
+            "volume_usd": 660707.46
+          },
+          {
+            "timestamp": "2023-11-16T18:13:20+00:00",
+            "volume_btc": 16,
+            "volume_usd": 703985.84
+          }
+        ],
+        "candles_used": 24,
+        "closed_only": true,
+        "max_volume_usd": 705495.83,
+        "timeframe": "1h"
+      }
+    },
+    "operational_range": {
+      "is_valid": true,
+      "min_operational_range_pct": 0.0,
+      "operational_range_pct": null,
+      "range_width": 1702.72,
+      "range_width_pct": 3.8704,
+      "resistance": 44845.330017874134,
+      "resistance_confirmations": 5,
+      "resistance_distance_pct": 2.8361,
+      "resistance_source": "cluster",
+      "resistance_valid": true,
+      "support": 43142.60553533907,
+      "support_confirmations": 5,
+      "support_distance_pct": 1.0684,
+      "support_source": "cluster",
+      "support_valid": true,
+      "too_narrow": false
+    },
+    "potential_trade_plan": {
+      "entry": 43608.53,
+      "expected_r": null,
+      "leverage": 23,
+      "margin_usd": 100.0,
+      "notional_usd": 2300.0,
+      "rr1": 0.772,
+      "rr2": 1.545,
+      "rr3": 2.781,
+      "side": "LONG",
+      "sl": 43057.47,
+      "tp1": 44034.21,
+      "tp2": 44459.9,
+      "tp3": 45140.99,
+      "weighted_rr": 1.808
+    },
+    "refresh_interval_seconds": 300,
+    "setup_context": {
+      "active": false
+    },
+    "signal": {
+      "metrics": {
+        "stoch_rsi_1h": {
+          "d": 82.81,
+          "k": 66.55,
+          "state": "NEUTRAL"
+        },
+        "volume_1h_relative": 1.143
+      },
+      "reason": "Directional zone detected, waiting for 1H rejection/confirmation.",
+      "side": "LONG",
+      "state": "WATCH",
+      "weighted_rr": 1.808
+    },
+    "statistics": {
+      "backtest_candles_used": null
+    },
+    "swing_range": {
+      "daily_candles_used": 45,
+      "display_type": "operational",
+      "min_operational_range_pct": 0.0,
+      "operational_resistance": 44845.330017874134,
+      "operational_resistance_confirmations": 5,
+      "operational_resistance_distance_pct": 2.8361,
+      "operational_resistance_source": "cluster",
+      "operational_resistance_valid": true,
+      "operational_support": 43142.60553533907,
+      "operational_support_confirmations": 5,
+      "operational_support_distance_pct": 1.0684,
+      "operational_support_source": "cluster",
+      "operational_support_valid": true,
+      "operational_valid": true,
+      "position_pct": 27.36,
+      "range_width": 1702.72,
+      "range_width_pct": 3.8704,
+      "resistance": 44845.33,
+      "structural_resistance": 44845.33,
+      "structural_support": 43142.61,
+      "support": 43142.61,
+      "too_narrow": false
+    },
+    "timestamp": "2026-10-17T12:00:00+00:00",
+    "trade_diagnostics": {
+      "analysis_window": {
+        "from": "2023-12-14",
+        "to": "2024-01-27"
+      },
+      "cluster_tolerance_pct": 2.5,
+      "daily_candles_used": 45,
+      "method": "SMA20_FILTERED_PIVOT_CLUSTER_V2",
+      "resistance": {
+        "pivots": [
+          {
+            "age_sessions": 5,
+            "price": 45043.15,
+            "timestamp": "2024-01-22T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 13,
+            "price": 44694.69,
+            "timestamp": "2024-01-14T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 22,
+            "price": 44849.49,
+            "timestamp": "2024-01-05T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 30,
+            "price": 45004.66,
+            "timestamp": "2023-12-28T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 38,
+            "price": 44634.66,
+            "timestamp": "2023-12-20T22:13:20+00:00"
+          }
+        ],
+        "score": 5,
+        "selected_level": 44845.33
+      },
+      "sma_max_distance_pct": 9.0,
+      "sma_period": 20,
+      "support": {
+        "pivots": [
+          {
+            "age_sessions": 9,
+            "price": 43204.43,
+            "timestamp": "2024-01-18T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 17,
+            "price": 42991.24,
+            "timestamp": "2024-01-10T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 26,
+            "price": 43339.23,
+            "timestamp": "2024-01-01T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 34,
+            "price": 43117.72,
+            "timestamp": "2023-12-24T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 42,
+            "price": 43060.42,
+            "timestamp": "2023-12-16T22:13:20+00:00"
+          }
+        ],
+        "score": 5,
+        "selected_level": 43142.61
+      }
+    },
+    "trade_plan": null,
+    "trade_window_open": false
+  },
+  "dashboard_volatile": {
+    "algorithm_version": "V2.1-beta",
+    "block_reason": "NO_TECHNICAL_SETUP",
+    "coin": "BTC",
+    "market": {
+      "price": 44408.53,
+      "stoch_rsi_1h": {
+        "d": 82.81,
+        "k": 66.55,
+        "state": "NEUTRAL"
+      },
+      "volume_24h_hourly": {
+        "bars": [
+          {
+            "timestamp": "2023-11-15T19:13:20+00:00",
+            "volume_btc": 13,
+            "volume_usd": 581256.4
+          },
+          {
+            "timestamp": "2023-11-15T20:13:20+00:00",
+            "volume_btc": 14,
+            "volume_usd": 625800.01
+          },
+          {
+            "timestamp": "2023-11-15T21:13:20+00:00",
+            "volume_btc": 15,
+            "volume_usd": 670686.82
+          },
+          {
+            "timestamp": "2023-11-15T22:13:20+00:00",
+            "volume_btc": 16,
+            "volume_usd": 715941.48
+          },
+          {
+            "timestamp": "2023-11-15T23:13:20+00:00",
+            "volume_btc": 12,
+            "volume_usd": 537520.41
+          },
+          {
+            "timestamp": "2023-11-16T00:13:20+00:00",
+            "volume_btc": 13,
+            "volume_usd": 582946.22
+          },
+          {
+            "timestamp": "2023-11-16T01:13:20+00:00",
+            "volume_btc": 14,
+            "volume_usd": 628325.3
+          },
+          {
+            "timestamp": "2023-11-16T02:13:20+00:00",
+            "volume_btc": 15,
+            "volume_usd": 673485.91
+          },
+          {
+            "timestamp": "2023-11-16T03:13:20+00:00",
+            "volume_btc": 16,
+            "volume_usd": 718295.83
+          },
+          {
+            "timestamp": "2023-11-16T04:13:20+00:00",
+            "volume_btc": 12,
+            "volume_usd": 538380.35
+          },
+          {
+            "timestamp": "2023-11-16T05:13:20+00:00",
+            "volume_btc": 13,
+            "volume_usd": 582668.41
+          },
+          {
+            "timestamp": "2023-11-16T06:13:20+00:00",
+            "volume_btc": 14,
+            "volume_usd": 626796.94
+          },
+          {
+            "timestamp": "2023-11-16T07:13:20+00:00",
+            "volume_btc": 15,
+            "volume_usd": 670932.32
+          },
+          {
+            "timestamp": "2023-11-16T08:13:20+00:00",
+            "volume_btc": 16,
+            "volume_usd": 715261.76
+          },
+          {
+            "timestamp": "2023-11-16T09:13:20+00:00",
+            "volume_btc": 12,
+            "volume_usd": 536429.25
+          },
+          {
+            "timestamp": "2023-11-16T10:13:20+00:00",
+            "volume_btc": 13,
+            "volume_usd": 581423.72
+          },
+          {
+            "timestamp": "2023-11-16T11:13:20+00:00",
+            "volume_btc": 14,
+            "volume_usd": 626720.53
+          },
+          {
+            "timestamp": "2023-11-16T12:13:20+00:00",
+            "volume_btc": 15,
+            "volume_usd": 672224.82
+          },
+          {
+            "timestamp": "2023-11-16T13:13:20+00:00",
+            "volume_btc": 16,
+            "volume_usd": 717768.86
+          },
+          {
+            "timestamp": "2023-11-16T14:13:20+00:00",
+            "volume_btc": 12,
+            "volume_usd": 538695.53
+          },
+          {
+            "timestamp": "2023-11-16T15:13:20+00:00",
+            "volume_btc": 13,
+            "volume_usd": 583695.88
+          },
+          {
+            "timestamp": "2023-11-16T16:13:20+00:00",
+            "volume_btc": 14,
+            "volume_usd": 628371.32
+          },
+          {
+            "timestamp": "2023-11-16T17:13:20+00:00",
+            "volume_btc": 15,
+            "volume_usd": 672707.46
+          },
+          {
+            "timestamp": "2023-11-16T18:13:20+00:00",
+            "volume_btc": 16,
+            "volume_usd": 716785.84
+          }
+        ],
+        "candles_used": 24,
+        "closed_only": true,
+        "max_volume_usd": 718295.83,
+        "timeframe": "1h"
+      }
+    },
+    "operational_range": {
+      "is_valid": true,
+      "min_operational_range_pct": 0.0,
+      "operational_range_pct": null,
+      "range_width": 1702.72,
+      "range_width_pct": 3.8012,
+      "resistance": 45645.330017874134,
+      "resistance_confirmations": 5,
+      "resistance_distance_pct": 2.785,
+      "resistance_source": "cluster",
+      "resistance_valid": true,
+      "support": 43942.60553533907,
+      "support_confirmations": 5,
+      "support_distance_pct": 1.0492,
+      "support_source": "cluster",
+      "support_valid": true,
+      "too_narrow": false
+    },
+    "potential_trade_plan": {
+      "entry": 44408.53,
+      "expected_r": null,
+      "leverage": 24,
+      "margin_usd": 100.0,
+      "notional_usd": 2400.0,
+      "rr1": 0.772,
+      "rr2": 1.545,
+      "rr3": 2.781,
+      "side": "LONG",
+      "sl": 43857.47,
+      "tp1": 44834.21,
+      "tp2": 45259.9,
+      "tp3": 45940.99,
+      "weighted_rr": 1.808
+    },
+    "refresh_interval_seconds": 300,
+    "setup_context": {
+      "active": false
+    },
+    "signal": {
+      "metrics": {
+        "stoch_rsi_1h": {
+          "d": 82.81,
+          "k": 66.55,
+          "state": "NEUTRAL"
+        },
+        "volume_1h_relative": 1.143
+      },
+      "reason": "Directional zone detected, waiting for 1H rejection/confirmation.",
+      "side": "LONG",
+      "state": "WATCH",
+      "weighted_rr": 1.808
+    },
+    "statistics": {
+      "backtest_candles_used": null
+    },
+    "swing_range": {
+      "daily_candles_used": 45,
+      "display_type": "operational",
+      "min_operational_range_pct": 0.0,
+      "operational_resistance": 45645.330017874134,
+      "operational_resistance_confirmations": 5,
+      "operational_resistance_distance_pct": 2.785,
+      "operational_resistance_source": "cluster",
+      "operational_resistance_valid": true,
+      "operational_support": 43942.60553533907,
+      "operational_support_confirmations": 5,
+      "operational_support_distance_pct": 1.0492,
+      "operational_support_source": "cluster",
+      "operational_support_valid": true,
+      "operational_valid": true,
+      "position_pct": 27.36,
+      "range_width": 1702.72,
+      "range_width_pct": 3.8012,
+      "resistance": 45645.33,
+      "structural_resistance": 45645.33,
+      "structural_support": 43942.61,
+      "support": 43942.61,
+      "too_narrow": false
+    },
+    "timestamp": "2026-10-17T12:00:00+00:00",
+    "trade_diagnostics": {
+      "analysis_window": {
+        "from": "2023-12-14",
+        "to": "2024-01-27"
+      },
+      "cluster_tolerance_pct": 2.5,
+      "daily_candles_used": 45,
+      "method": "SMA20_FILTERED_PIVOT_CLUSTER_V2",
+      "resistance": {
+        "pivots": [
+          {
+            "age_sessions": 5,
+            "price": 45843.15,
+            "timestamp": "2024-01-22T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 13,
+            "price": 45494.69,
+            "timestamp": "2024-01-14T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 22,
+            "price": 45649.49,
+            "timestamp": "2024-01-05T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 30,
+            "price": 45804.66,
+            "timestamp": "2023-12-28T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 38,
+            "price": 45434.66,
+            "timestamp": "2023-12-20T22:13:20+00:00"
+          }
+        ],
+        "score": 5,
+        "selected_level": 45645.33
+      },
+      "sma_max_distance_pct": 9.0,
+      "sma_period": 20,
+      "support": {
+        "pivots": [
+          {
+            "age_sessions": 9,
+            "price": 44004.43,
+            "timestamp": "2024-01-18T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 17,
+            "price": 43791.24,
+            "timestamp": "2024-01-10T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 26,
+            "price": 44139.23,
+            "timestamp": "2024-01-01T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 34,
+            "price": 43917.72,
+            "timestamp": "2023-12-24T22:13:20+00:00"
+          },
+          {
+            "age_sessions": 42,
+            "price": 43860.42,
+            "timestamp": "2023-12-16T22:13:20+00:00"
+          }
+        ],
+        "score": 5,
+        "selected_level": 43942.61
+      }
+    },
+    "trade_plan": null,
+    "trade_window_open": false
+  },
+  "dst_2026-03-29T11:00:00+00:00": [
+    "2026-03-28T06:00:00+00:00",
+    "2026-03-29T05:00:00+00:00",
+    "2026-03-28T07:00:00+01:00",
+    "2026-03-29T07:00:00+02:00"
+  ],
+  "dst_2026-10-25T11:00:00+00:00": [
+    "2026-10-24T05:00:00+00:00",
+    "2026-10-25T06:00:00+00:00",
+    "2026-10-24T07:00:00+02:00",
+    "2026-10-25T07:00:00+01:00"
+  ],
+  "pnl_LONG_110": {
+    "r": 0.6,
+    "usd": 30.0
+  },
+  "pnl_LONG_95": {
+    "r": -0.3,
+    "usd": -15.0
+  },
+  "pnl_SHORT_105": {
+    "r": -0.3,
+    "usd": -15.0
+  },
+  "pnl_SHORT_90": {
+    "r": 0.6,
+    "usd": 30.0
+  },
+  "relvol_nominal": 1.3043478260869565,
+  "relvol_short": null,
+  "relvol_spike": 8.695652173913043,
+  "relvol_zero": 0.0,
+  "rr_LONG_100": 0.0,
+  "rr_LONG_95": 2.0,
+  "rr_SHORT_100": 0.0,
+  "rr_SHORT_105": 2.0,
+  "signal_invalid_range": {
+    "candidate": null,
+    "error": null,
+    "plan": null,
+    "signal": {
+      "reason": "Invalid daily range (support >= resistance).",
+      "side": "NO TRADE",
+      "state": "NO_TRADE",
+      "weighted_rr": null
+    }
+  },
+  "signal_long_confirm": {
+    "candidate": {
+      "entry": 102,
+      "rr1": 1.6666666666666667,
+      "rr2": 3.3333333333333335,
+      "rr3": 6.0,
+      "side": "LONG",
+      "sl": 99.0,
+      "tp1": 107.0,
+      "tp2": 112.0,
+      "tp3": 120.0,
+      "weighted_rr": 3.9000000000000004
+    },
+    "error": null,
+    "plan": {
+      "entry": 102.0,
+      "expected_r": null,
+      "leverage": 9,
+      "margin_usd": 150.0,
+      "notional_usd": 1350.0,
+      "rr1": 1.667,
+      "rr2": 3.333,
+      "rr3": 6.0,
+      "side": "LONG",
+      "sl": 99.0,
+      "tp1": 107.0,
+      "tp2": 112.0,
+      "tp3": 120.0,
+      "weighted_rr": 3.9
+    },
+    "signal": {
+      "reason": "Confirmed setup with weighted RR above VERY_HIGH threshold.",
+      "side": "LONG",
+      "state": "VERY_HIGH",
+      "weighted_rr": 3.9
+    }
+  },
+  "signal_long_watch": {
+    "candidate": {
+      "entry": 102,
+      "rr1": 1.6666666666666667,
+      "rr2": 3.3333333333333335,
+      "rr3": 6.0,
+      "side": "LONG",
+      "sl": 99.0,
+      "tp1": 107.0,
+      "tp2": 112.0,
+      "tp3": 120.0,
+      "weighted_rr": 3.9000000000000004
+    },
+    "error": null,
+    "plan": {
+      "entry": 102.0,
+      "expected_r": null,
+      "leverage": 10,
+      "margin_usd": 100.0,
+      "notional_usd": 1000.0,
+      "rr1": 1.667,
+      "rr2": 3.333,
+      "rr3": 6.0,
+      "side": "LONG",
+      "sl": 99.0,
+      "tp1": 107.0,
+      "tp2": 112.0,
+      "tp3": 120.0,
+      "weighted_rr": 3.9
+    },
+    "signal": {
+      "reason": "Directional zone detected, waiting for 1H rejection/confirmation.",
+      "side": "LONG",
+      "state": "WATCH",
+      "weighted_rr": 3.9
+    }
+  },
+  "signal_neutral": {
+    "candidate": null,
+    "error": null,
+    "plan": null,
+    "signal": {
+      "reason": "Price is in the neutral area of the active daily swing range.",
+      "side": "NEUTRAL",
+      "state": "NO_TRADE",
+      "weighted_rr": null
+    }
+  },
+  "signal_short_confirm": {
+    "candidate": {
+      "entry": 118,
+      "rr1": 1.6666666666666667,
+      "rr2": 3.3333333333333335,
+      "rr3": 6.0,
+      "side": "SHORT",
+      "sl": 121.0,
+      "tp1": 113.0,
+      "tp2": 108.0,
+      "tp3": 100.0,
+      "weighted_rr": 3.9000000000000004
+    },
+    "error": null,
+    "plan": {
+      "entry": 118.0,
+      "expected_r": null,
+      "leverage": 10,
+      "margin_usd": 150.0,
+      "notional_usd": 1500.0,
+      "rr1": 1.667,
+      "rr2": 3.333,
+      "rr3": 6.0,
+      "side": "SHORT",
+      "sl": 121.0,
+      "tp1": 113.0,
+      "tp2": 108.0,
+      "tp3": 100.0,
+      "weighted_rr": 3.9
+    },
+    "signal": {
+      "reason": "Confirmed setup with weighted RR above VERY_HIGH threshold.",
+      "side": "SHORT",
+      "state": "VERY_HIGH",
+      "weighted_rr": 3.9
+    }
+  },
+  "signal_threshold_below": {
+    "candidate": {
+      "entry": 102,
+      "rr1": 1.6666666666666667,
+      "rr2": 3.3333333333333335,
+      "rr3": 6.0,
+      "side": "LONG",
+      "sl": 99.0,
+      "tp1": 107.0,
+      "tp2": 112.0,
+      "tp3": 120.0,
+      "weighted_rr": 3.9000000000000004
+    },
+    "error": null,
+    "plan": {
+      "entry": 102.0,
+      "expected_r": null,
+      "leverage": 10,
+      "margin_usd": 100.0,
+      "notional_usd": 1000.0,
+      "rr1": 1.667,
+      "rr2": 3.333,
+      "rr3": 6.0,
+      "side": "LONG",
+      "sl": 99.0,
+      "tp1": 107.0,
+      "tp2": 112.0,
+      "tp3": 120.0,
+      "weighted_rr": 3.9
+    },
+    "signal": {
+      "reason": "Directional zone detected, waiting for 1H rejection/confirmation.",
+      "side": "LONG",
+      "state": "WATCH",
+      "weighted_rr": 3.9
+    }
+  },
+  "signal_threshold_exact": {
+    "candidate": {
+      "entry": 102,
+      "rr1": 1.6666666666666667,
+      "rr2": 3.3333333333333335,
+      "rr3": 6.0,
+      "side": "LONG",
+      "sl": 99.0,
+      "tp1": 107.0,
+      "tp2": 112.0,
+      "tp3": 120.0,
+      "weighted_rr": 3.9000000000000004
+    },
+    "error": null,
+    "plan": {
+      "entry": 102.0,
+      "expected_r": null,
+      "leverage": 9,
+      "margin_usd": 150.0,
+      "notional_usd": 1350.0,
+      "rr1": 1.667,
+      "rr2": 3.333,
+      "rr3": 6.0,
+      "side": "LONG",
+      "sl": 99.0,
+      "tp1": 107.0,
+      "tp2": 112.0,
+      "tp3": 120.0,
+      "weighted_rr": 3.9
+    },
+    "signal": {
+      "reason": "Confirmed setup with weighted RR above VERY_HIGH threshold.",
+      "side": "LONG",
+      "state": "VERY_HIGH",
+      "weighted_rr": 3.9
+    }
+  },
+  "sizing_invalid": {
+    "error": "INVALID_LONG_STOP_GEOMETRY"
+  },
+  "sizing_long": {
+    "estimated_loss_at_stop_usd": 28.0,
+    "leverage": 7,
+    "margin_usd": 100.0,
+    "notional_usd": 700.0,
+    "stop_distance_pct": 4.0
+  },
+  "sizing_short": {
+    "estimated_loss_at_stop_usd": 28.0,
+    "leverage": 7,
+    "margin_usd": 100.0,
+    "notional_usd": 700.0,
+    "stop_distance_pct": 4.0
+  },
+  "stoch_downtrend": {
+    "d": 0.0,
+    "k": 0.0
+  },
+  "stoch_flat": {
+    "d": 0.0,
+    "k": 0.0
+  },
+  "stoch_oscillating": {
+    "d": 0.14917498551537406,
+    "k": 0.4475249565461222
+  },
+  "stoch_short": null,
+  "topology_LONG_105": [
+    false,
+    "INVALID_LONG_STOP_GEOMETRY"
+  ],
+  "topology_LONG_95": [
+    true,
+    null
+  ],
+  "topology_SHORT_105": [
+    true,
+    null
+  ],
+  "topology_SHORT_95": [
+    false,
+    "INVALID_SHORT_STOP_GEOMETRY"
+  ]
+}
