@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+import os
 from pathlib import Path
 
 SCHEMA = """
@@ -496,6 +497,9 @@ def _ensure_auth_tables(conn: sqlite3.Connection) -> None:
 
 
 def connect(path: Path) -> sqlite3.Connection:
+    if os.environ.get("BTC_DB_BACKEND", "sqlite").lower() == "postgres":
+        from app.storage.postgres import connect_pg
+        return connect_pg()
     path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(path, timeout=30)
     conn.row_factory = sqlite3.Row
@@ -505,6 +509,10 @@ def connect(path: Path) -> sqlite3.Connection:
 
 
 def initialize(path: Path) -> None:
+    if os.environ.get("BTC_DB_BACKEND", "sqlite").lower() == "postgres":
+        from app.storage.postgres import initialize_pg
+        initialize_pg()
+        return
     with connect(path) as conn:
         conn.executescript(SCHEMA)
         _migrate_trade_signals_schema(conn)
