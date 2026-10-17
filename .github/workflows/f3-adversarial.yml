@@ -1,0 +1,36 @@
+name: F3 adversarial failure simulations
+on:
+  push:
+    branches: ['test/f3-live-fault-validation', main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  faults:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: f3_test
+          POSTGRES_PASSWORD: disposable_ci_only
+          POSTGRES_DB: btc_f3
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U f3_test -d btc_f3"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      BTC_TEST_DATABASE: 'YES'
+      BTC_DB_BACKEND: postgres
+      BTC_DATABASE_URL: postgresql://f3_test:disposable_ci_only@localhost:5432/btc_f3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install -r requirements-f2.lock
+      - run: python -m pytest -q tests/test_f3_adversarial.py
