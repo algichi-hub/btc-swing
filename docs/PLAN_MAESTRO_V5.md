@@ -204,3 +204,36 @@ Toda variación de algoritmos, versiones, intervalo, semántica de señales, est
 **Actualización F3 17-10-2026:** 9 pruebas adversariales adicionales PASS CI, SIGKILL Linux+Postgres con idempotencia de PAPER, en Railway dos réplicas/new slot y error red recuperado, pausa real 677s con RETRASADO y recuperación, 1 réplica restaurada. Falta prueba de corte mid-cycle dentro de Railway; G3 sigue NO-GO estricto. [Acta](F3_PRUEBAS_ADVERSARIALES_20261017.md).
 
 **F4 en curso (17-10-2026):** El usuario autorizó avanzar con el riesgo residual G3 conocido y documentado, sin otorgar GO automático a G3. API de observabilidad y ventana LOG implementadas, Vercel Preview READY, Railway API staged a falta de credenciales de rol web y CSRF. E2E sigue pendiente; G4 NO-GO. [Acta F4](F4_EJECUCION_Y_HALLAZGOS.md).
+
+## Addendum 2026-10-17 — Entrada excepcional condicionada a F5 (F5-ENTRY-RISK-01)
+
+**Naturaleza de decisión:** valoración técnica de riesgo y definición de un *entry* de trabajo para F5. No constituye GO de G3 ni G4, no sustituye los criterios de salida G5/G6, y no presume aceptación formal de riesgos por el propietario. Esta excepción únicamente permite comenzar F5 en un entorno aislado mientras se resuelven pendientes de G3/G4; para activar funciones en Preview integradas con credenciales o para promover a Production se requiere validación específica.
+
+### Fundamento
+- G0–G2 GO previamente documentados. G3 NO-GO por prueba pendiente de SIGKILL **mid-write en Railway** o aceptación explícita documentada de equivalencia frente a SIGKILL CI/Postgres y recuperación Railway.
+- G4 NO-GO por controles E2E pendientes. Login ADMIN por Vercel confirmado por titular después de corregir Origin exacto; esto no certifica RBAC VIEWER, CSRF negativo, cookie/expiración, 429 real, recuperación de código, logs/redacción, reset destructivo controlado ni caché privada.
+- En F5 el mayor riesgo nuevo es push duplicado/omitido y filtración o persistencia local de información privada, además de que la retirada de Telegram altere el pipeline de señales.
+
+### Evaluación de riesgo para iniciar **trabajo** F5, no producción
+| Modo de avance | Probabilidad × Impacto | Nivel | Dictamen |
+|---|---|---|---|
+| Diseño/tests y desarrollo de manifest, SW, VAPID y outbox en rama sin deploy y con fixtures, secrets fake | 2 × 2 = 4 | BAJO | ADMISIBLE como trabajo preparatorio |
+| Ensayo integrado F5 en Preview aislado, sin datos sensibles ni credenciales reales de push y sin trading | 2 × 4 = 8 | MODERADO | Solo con checklist de entrada y controles temporales |
+| Activar notificaciones reales y dispatcher conectado a eventos operativos mientras G3/G4 mantienen NO-GO | 3 × 4 = 12 | ALTO | NO AUTORIZADO por este entry |
+| Promover F5/otros cambios a Production o habilitar órdenes reales | 3 × 5 = 15 | ALTO/CRÍTICO | PROHIBIDO sin gates y permiso expreso |
+
+Las cifras son una valoración cualitativa de ingeniería en escala 1–5, **no probabilidades estadísticas medidas**.
+
+### Entry F5-E0 — condiciones acumulativas para comenzar rama aislada
+1. Mantener G3/G4 NO-GO visibles y registrar **R02, R06, R07, R10, R14, R17, R19, R20, R23, R24** como abiertos; nunca interpretar continuar desarrollo como aceptar automáticamente su riesgo residual.
+2. Baseline GitHub trazable, CI de F0–F4 comprobada antes de cada merge; rama `develop/f5-pwa-push` desde `main`, sin despliegue automático no autorizado, sin modificación del algoritmo V4, de roles/usuarios reales ni del motor en Railway.
+3. Iniciar exclusivamente F5.01 (manifest/SW sin cachear /api, /login, /ops ni páginas privadas), diseño F5.02 (suscripción por usuario/dispositivo, HTTPS, consentimiento, revocación), F5.03 (outbox idempotente y simulador), y tests; Telegram seguirá deshabilitado, pero no se elimina hasta superar paridad.
+4. Secrets VAPID nunca en repositorio ni en logs; no incluir cargas privadas en notificaciones; no permitir notificaciones activas a suscripciones reales sin autorización separada.
+5. Preparar pruebas negativas de CSRF, permisos y cache/logout; dedup/outbox y recuperación post-crash; presupuesto/limites de reintento; evidencias reproducibles por SHA.
+6. **Antes de integrar/desplegar** en Preview con efectos reales, resolver G3 R02 y los controles G4 que afectan directamente push (cookie/sesión, RBAC, CSRF, logs/estado, cache privada); registrar la aceptación residual si procede. G3/G4 deberán ser GO para aprobar entrada formal de F5 conforme a secuencia maestra.
+
+### Stop rules
+- Se observa duplicación de eventos/señales, fuga de tokens, caché privada persistente tras logout, envíos no consentidos, alteración del algoritmo, efecto externo sobre V4 o uso de Production → **detener inmediatamente F5**, conservar trazas sin secretos y volver a baseline.
+- Cualquier test crítico FAIL o NOT RUN bloquea G5; no se considera GO por funcionamiento visual de la PWA.
+
+**Estado:** `F5-E0 = APTO PARA PREPARACIÓN TÉCNICA AISLADA`; `F5 ENTRY FORMAL = BLOQUEADO (G3/G4 NO-GO)`; `G5 = NO-GO`. Referencia de auditoría: [AUDITORIA_G0_G4_Y_ENTRADA_F5_20261017.md](AUDITORIA_G0_G4_Y_ENTRADA_F5_20261017.md).
