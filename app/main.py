@@ -466,6 +466,71 @@ def change_password(
     return {"ok": True}
 
 
+class GenerateRecoveryCodesPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    current_password: str
+
+
+class RecoverAccountPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    username: str
+    recovery_code: str
+    new_password: str
+
+
+@public_router.get("/api/auth/recovery-codes/status")
+def recovery_codes_status(
+    session_user: tuple[AuthSession, User] = Depends(get_current_session_and_user),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> Response:
+    _, user = session_user
+    return JSONResponse(
+        {"remaining": auth_service.recovery_codes_remaining(user.id)},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@public_router.post("/api/auth/recovery-codes")
+def generate_recovery_codes(
+    payload: GenerateRecoveryCodesPayload,
+    _origin: None = Depends(verify_csrf_origin),
+    _csrf: None = Depends(verify_csrf_token),
+    session_user: tuple[AuthSession, User] = Depends(get_current_session_and_user),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> Response:
+    _, user = session_user
+    codes = auth_service.generate_recovery_codes(user.id, payload.current_password)
+    if codes is None:
+        raise HTTPException(status_code=400, detail="Contraseña actual incorrecta")
+    return JSONResponse(
+        {"codes": codes, "count": len(codes)},
+        headers={"Cache-Control": "no-store", "Pragma": "no-cache"},
+    )
+
+
+@public_router.post("/api/auth/recover")
+def recover_account(
+    payload: RecoverAccountPayload,
+    request: Request,
+    _origin: None = Depends(verify_csrf_origin),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> Response:
+    if len(payload.username) > 64 or len(payload.recovery_code) > 64:
+        raise HTTPException(status_code=400, detail="Código o usuario inválido")
+    if not 16 <= len(payload.new_password) <= 256:
+        raise HTTPException(status_code=422, detail="La contraseña debe tener entre 16 y 256 caracteres")
+    client_ip = request.client.host if request.client else "unknown"
+    outcome = auth_service.reset_password_with_code(
+        payload.username, payload.recovery_code, payload.new_password, client_ip,
+    )
+    if outcome == "LOCKED":
+        raise HTTPException(status_code=429, detail="Demasiados intentos. Inténtalo más tarde.",
+                            headers={"Retry-After": "900"})
+    if outcome != "OK":
+        raise HTTPException(status_code=400, detail="Usuario o código de recuperación no válido")
+    return JSONResponse({"ok": True}, headers={"Cache-Control": "no-store"})
+
+
 @viewer_router.get("/auth/csrf")
 def get_csrf(
     response: Response,
