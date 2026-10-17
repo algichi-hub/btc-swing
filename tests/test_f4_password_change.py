@@ -69,7 +69,6 @@ def test_change_password_endpoint_fail_closed(monkeypatch, auth_service):
     assert client.post(route, json=data).status_code == 403  # Origin required
     assert client.post(route, json=data, headers={"Origin": "https://foreign.invalid"}).status_code == 403
     allowed = settings.auth_allowed_origins[0] if settings.auth_allowed_origins else "https://localhost"
-    monkeypatch.setattr(settings, "auth_allowed_origins", [allowed])
     assert client.post(route, json=data, headers={"Origin": allowed}).status_code == 401
 
     # A fake authorized session does not bypass CSRF; the token is still required.
