@@ -165,7 +165,7 @@ class AuthService:
     def _normalize_recovery_code(code: str) -> str | None:
         if not isinstance(code, str) or len(code) > 64:
             return None
-        compact = re.sub(r"[-\\s]", "", code).lower()
+        compact = re.sub(r"[-\s]", "", code).lower()
         return compact if re.fullmatch(r"[0-9a-f]{32}", compact) else None
 
     def recovery_codes_remaining(self, user_id: int) -> int:
