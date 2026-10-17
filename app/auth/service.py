@@ -133,6 +133,26 @@ class AuthService:
     def derive_csrf_token(self, session: AuthSession) -> str:
         return derive_csrf_token(session.session_token_hash, settings.auth_csrf_secret)
 
+    def change_password(self, user_id: int, current_password: str, new_password: str) -> bool:
+        """Atomically rotate a password and revoke ALL sessions.
+
+        Only the caller with a validated session should invoke this method.
+        The old password must still match at the moment of the update.
+        """
+        if not isinstance(new_password, str) or len(new_password) < 16 or len(new_password) > 256:
+            raise ValueError("La nueva contraseña debe tener entre 16 y 256 caracteres")
+        if new_password == current_password:
+            raise ValueError("La nueva contraseña debe ser diferente de la actual")
+        with connect(self.db_path) as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            user = self.repository.get_user_by_id(conn, user_id)
+            if user is None or not user.enabled or not verify_password(current_password, user.password_hash):
+                return False
+            self.repository.update_password_hash(conn, user_id, hash_password(new_password))
+            conn.execute("UPDATE auth_sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL",
+                         (_utc_now_iso(), user_id))
+            return True
+
     def create_session(
         self, user_id: int, ttl_hours: int | None = None
     ) -> tuple[AuthSession, str]:
