@@ -46,12 +46,12 @@ def build_initial_admin_sql(username: str, password: str) -> str:
     if "'" in clean or "'" in hashed:
         raise ValueError("Unsafe SQL literal")
     return (
-        "BEGIN;\\n"
-        "LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE;\\n"
+        "BEGIN;\n"
+        "LOCK TABLE users IN SHARE ROW EXCLUSIVE MODE;\n"
         "INSERT INTO users(username,password_hash,role,enabled,created_at,updated_at) "
         f"SELECT '{clean}','{hashed}','ADMIN',1,now()::text,now()::text "
-        "WHERE NOT EXISTS (SELECT 1 FROM users);\\n"
-        "COMMIT;\\n"
+        "WHERE NOT EXISTS (SELECT 1 FROM users);\n"
+        "COMMIT;\n"
     )
 
 
