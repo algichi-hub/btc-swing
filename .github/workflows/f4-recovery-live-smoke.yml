@@ -1,0 +1,33 @@
+name: F4 recovery Preview real HTTPS smoke
+on:
+  push:
+    branches: [test/f4-recovery-live-smoke]
+permissions: {contents: read}
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Verify new recovery endpoints and frontend from Railway Preview
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=https://btc-v5-api-preview-preview.up.railway.app
+          check() {
+            code="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' "$base$2")"
+            echo "GET $2 => $code"
+            test "$code" = "$1"
+          }
+          check 200 /health
+          check 200 /login
+          check 200 /static/app.js
+          check 200 /static/login.js
+          check 200 /static/index.html
+          check 401 /api/auth/recovery-codes/status
+          curl -fsSL "$base/static/index.html" | grep -q 'recovery-generate-form'
+          curl -fsSL "$base/login" | grep -q 'recoveryForm'
+          status="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
+            -d '{"username":"nobody","recovery_code":"aaaaaaaa-aaaaaaaa-aaaaaaaa-aaaaaaaa","new_password":"safe-test-password-not-used"}' \
+            "$base/api/auth/recover")"
+          echo "Without Origin => $status"
+          test "$status" = 403
