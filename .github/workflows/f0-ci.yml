@@ -64,6 +64,12 @@ jobs:
                      or p.startswith('.env') and p != '.env.example']
           assert not forbidden, f'Forbidden tracked paths: {forbidden}'
           PY
+      - name: F2 provision least-privilege roles on disposable database
+        run: |
+          set -euo pipefail
+          CID="$(docker ps -q --filter ancestor=postgres:17 | head -n 1)"
+          test -n "$CID"
+          docker exec -i "$CID" psql -U f2_test -d btc_f2_test -v ON_ERROR_STOP=1 < scripts/provision_neon_roles.sql
       - name: F2 ephemeral PostgreSQL integration
         env:
           BTC_DB_BACKEND: postgres
