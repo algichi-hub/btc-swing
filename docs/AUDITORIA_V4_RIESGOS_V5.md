@@ -1,6 +1,6 @@
 # Auditoría V4 y registro vivo de riesgos de V5
 
-**Versión:** 1.3 · **Fecha:** 2026-10-17 · **Estado:** F0/G0 y F1/G1 verificados; riesgos residuales abiertos para G2–G6.
+**Versión:** 1.4 · **Fecha:** 2026-10-17 · **Estado:** F0/G0, F1/G1 y F2/G2 verificados; riesgos residuales abiertos para G3–G6.
 
 ## 1. Alcance y límites de la evidencia
 Fuente: inspección estática del `v4.zip` proporcionado (146 entradas). No se ha hecho auditoría dinámica de la Raspberry, ni se ha ejecutado la regresión original. La base SQLite incluida en ZIP está vacía (0 bytes) y no hay carpeta de tests en este artefacto. La documentación V4 menciona 563 tests en una baseline anterior: **no** es un resultado validado para este ZIP.
@@ -111,6 +111,21 @@ Cada gate tendrá un registro en `docs/GATES_Y_EVIDENCIAS.md` con **casos de pru
 | R18 | Dependencias fijadas en lock de 38 paquetes para Python 3.11/Ubuntu y verificadas en CI; **riesgo residual** ante otro runtime | G3 build Railway equivalente |
 
 La valoración cuantitativa inicial del registro permanece conservadora hasta pruebas de integración: no rebajar automáticamente probabilidad/impacto de producción a partir de tests unitarios.
+
+## 5.3. Revisión G2 — Neon y persistencia (2026-10-17)
+
+**Evidencia:** [Acta F2](F2_EJECUCION_Y_HALLAZGOS.md) y [CI 39015731740](https://github.com/algichi-hub/btc-swing/actions/runs/39015731740), **93/93 pruebas PASS**, backup/restauración completa en PostgreSQL efímero. Neon Production y Preview: 16 tablas, 0 usuarios, 0 señales y 0 operaciones; migración 0001 verificada por checksum.
+
+| Riesgo | Resultado G2 | Pendiente |
+|---|---|---|
+| R03 | Cerrado por alcance: no se migrará histórico de Raspberry | Verificar BBDD nueva vacía en G6 |
+| R05 | Adaptador PostgreSQL, transacciones/rollback, unicidad y repositorios V4 comprobados | Consultas raras/API integral G3/G4 |
+| R12 | Estado inicial limpio y sin snapshots Pi, esquema de persistencia probado | Reinicios con datos generados en V5, G3 |
+| R17 | 93 tests y concurrencia PostgreSQL; aún hay conexiones por operación sin pool | Pool/carga/costes G3/G4 |
+| R21 | Bootstrap Argon2 y seed defaults idempotente probados en CI; sin usuarios reales | Alta real, login y sesiones G4 |
+| R06 | **Nuevo hallazgo:** API Neon creó roles con membresía `neon_superuser`. Se eliminaron los cuatro roles elevados creados durante F2 y se sustituyeron por roles SQL sin CREATEDB/CREATEROLE/membresía administrativa. Permisos segregados confirmados en ambas ramas y CI. | Credenciales/secretos runtime F3/G4 |
+
+No se reduce automáticamente el riesgo cuantitativo de producción sin validación de servicios cloud. Los controles destructivos de reset permanecen en G4.
 
 ## 6. Controles de cambio
 - No cambiar algoritmo salvo incidencia documentada y tests comparativos.

@@ -11,7 +11,21 @@ permissions:
 jobs:
   f0:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: f2_test
+          POSTGRES_PASSWORD: f2_ci_only
+          POSTGRES_DB: btc_f2_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U f2_test -d btc_f2_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - name: Install Python
@@ -19,7 +33,7 @@ jobs:
         with:
           python-version: '3.11'
           cache: pip
-          cache-dependency-path: requirements-f1.lock
+          cache-dependency-path: requirements-f2.lock
       - name: Ensure V4 source is committed
         run: |
           test -f app/config.py
@@ -27,17 +41,17 @@ jobs:
           test -f requirements-dev.txt
           test -f tests/test_f0_baseline.py
       - name: Install dependencies
-        run: python -m pip install -r requirements-f1.lock
+        run: python -m pip install -r requirements-f2.lock
       - name: Verify resolved dependency lock
         run: |
           python -m pip freeze > /tmp/resolved.txt
-          grep '==' requirements-f1.lock | sort -f > /tmp/expected.txt
+          grep '==' requirements-f2.lock | sort -f > /tmp/expected.txt
           sort -f /tmp/resolved.txt > /tmp/actual.txt
           diff -u /tmp/expected.txt /tmp/actual.txt
       - name: Syntax compilation
         run: python -m compileall -q app tests
       - name: Run F0 and F1 algorithm regression
-        run: python -m pytest -q tests/test_f0_baseline.py tests/test_f0_smoke.py tests/test_f1_golden.py tests/test_f1_contracts.py tests/test_f1_exits.py
+        run: python -m pytest -q tests/test_f0_baseline.py tests/test_f0_smoke.py tests/test_f1_golden.py tests/test_f1_contracts.py tests/test_f1_exits.py tests/test_f2_unit.py
       - name: Excluded file policy
         run: |
           python - <<'PY'
@@ -50,3 +64,35 @@ jobs:
                      or p.startswith('.env') and p != '.env.example']
           assert not forbidden, f'Forbidden tracked paths: {forbidden}'
           PY
+      - name: F2 initialize fresh PostgreSQL schema for role grants
+        env:
+          BTC_DB_BACKEND: postgres
+          BTC_TEST_DATABASE: 'YES'
+          BTC_DATABASE_URL: postgresql://f2_test:f2_ci_only@localhost:5432/btc_f2_test
+        run: python -c "from app.storage.postgres import initialize_pg; initialize_pg()"
+      - name: F2 provision least-privilege roles on disposable database
+        run: |
+          set -euo pipefail
+          CID="$(docker ps -q --filter ancestor=postgres:17 | head -n 1)"
+          test -n "$CID"
+          docker exec -i "$CID" psql -U f2_test -d btc_f2_test -v ON_ERROR_STOP=1 < scripts/provision_neon_roles.sql
+      - name: F2 ephemeral PostgreSQL integration
+        env:
+          BTC_DB_BACKEND: postgres
+          BTC_TEST_DATABASE: 'YES'
+          BTC_DATABASE_URL: postgresql://f2_test:f2_ci_only@localhost:5432/btc_f2_test
+        run: python -m pytest -q tests/test_f2_postgres.py
+
+      - name: F2 backup and restore in disposable PostgreSQL
+        run: |
+          set -euo pipefail
+          CID="$(docker ps -q --filter ancestor=postgres:17 | head -n 1)"
+          test -n "$CID"
+          docker exec "$CID" sh -ec '
+            pg_dump -U f2_test -d btc_f2_test -Fc -f /tmp/btc_f2.dump
+            createdb -U f2_test btc_f2_restore
+            pg_restore -U f2_test -d btc_f2_restore --no-owner /tmp/btc_f2.dump
+            test "$(psql -U f2_test -d btc_f2_restore -Atc "SELECT count(*) FROM trade_signals")" -ge 1
+            test "$(psql -U f2_test -d btc_f2_restore -Atc "SELECT count(*) FROM schema_migrations")" -eq 1
+            test "$(psql -U f2_test -d btc_f2_restore -Atc "SELECT count(*) FROM users")" -ge 2
+          '
