@@ -1,0 +1,1 @@
+"""BTC Swing Trade application."""

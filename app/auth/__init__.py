@@ -1,0 +1,57 @@
+from app.auth.http import (
+    AUTH_COOKIE_NAME,
+    LoginPayload,
+    delete_session_cookie,
+    get_auth_service,
+    get_current_session_and_user,
+    get_current_user,
+    read_bounded_request_body,
+    require_admin,
+    require_authenticated,
+    set_session_cookie,
+    verify_csrf_origin,
+    verify_csrf_token,
+)
+from app.auth.models import AuthSession, User, UserRole
+from app.auth.repository import AuthRepository
+from app.auth.security import (
+    check_needs_rehash,
+    derive_csrf_token,
+    generate_session_token,
+    hash_password,
+    hash_session_token,
+    normalize_username,
+    validate_csrf_secret,
+    verify_dummy_password,
+    verify_password,
+)
+from app.auth.service import AuthService
+
+__all__ = [
+    "User",
+    "UserRole",
+    "AuthSession",
+    "AuthRepository",
+    "AuthService",
+    "hash_password",
+    "verify_password",
+    "generate_session_token",
+    "hash_session_token",
+    "normalize_username",
+    "derive_csrf_token",
+    "validate_csrf_secret",
+    "AUTH_COOKIE_NAME",
+    "get_auth_service",
+    "get_current_user",
+    "get_current_session_and_user",
+    "require_authenticated",
+    "require_admin",
+    "set_session_cookie",
+    "delete_session_cookie",
+    "verify_csrf_origin",
+    "verify_csrf_token",
+    "verify_dummy_password",
+    "check_needs_rehash",
+    "read_bounded_request_body",
+    "LoginPayload",
+]
