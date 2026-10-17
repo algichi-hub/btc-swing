@@ -145,3 +145,11 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - Login Vercel→Railway confirmado por usuario y status HTTP 200, `/api/auth/me` 200 en Railway: R10 mitigado parcialmente. Pruebas de cookie en navegador, logout, VIEWER/RBAC, caducidad, CSRF con sesión, 429 con cuenta de prueba: **NOT RUN**.
 - R19: defensa web desplegada pero Service Worker F5 inexistente y prueba real de cache/CSP pendiente; **ABIERTO**.
 - **Decisión sin cambios:** G3 NO-GO (SIGKILL mid-write Railway), G4 NO-GO (E2E críticos pendientes). R06/R10/R19 no cerrados; no publicar GO ficticio. No se modificó Production ni Raspberry.
+
+## Verificación adicional de remediación — 2026-10-17
+- Consultas de solo lectura a Neon Preview (`cool-sea-01964139`, rama `br-old-heart-bawz12tt`): 145 `worker_cycles`, todos `status=OK`; `SELECT count(*) FROM (SELECT cycle_key GROUP BY cycle_key HAVING count(*)>1)` = 0 slots duplicados. **PASS observacional** para ciclos existentes; no sustituye SIGKILL mid-write Railway ni garantiza exactamente-una-vez de efectos externos. Se observan 5 registros de sesión sin acceder a credenciales.
+- Inspección dinámica con el conector GitHub de archivos actuales: 6 controles estáticos PASS (no-store API/HTML, CSP script-src self sin inline, ausencia de scripts/handlers inline y ausencia de sinks `innerHTML=` en app/login/ops JS). **No equivalente a comprobar headers reales en navegador.**
+- Railway environment_status Preview: 2 servicios, 0 incidencias y sin cambios pendientes; API deployment `2269c093-1f56-441f-8c4d-453f65652816` SUCCESS, Vercel `dpl_GsoHXTsL5pu6vZ1qfVwL1SbvjXZ9` READY.
+- Workflow negativo `.github/workflows/v5-f4-security-smoke.yml` commit `a643bac`: GitHub no devolvió `workflow_runs` para último SHA. Smoke HTTPS no ejecutable desde contenedor de evaluación (resolución DNS bloqueada); resultados live 401/403/CSP = **NOT RUN**, no PASS.
+- Requiere todavía login y logout por navegador (atributos de cookie y 401 tras cerrar), CSRF/RBAC VIEWER, 429 contra identidad desechable, verificación CSP/Cache-Control HTTP, recuperación por código privada y ensayo SIGKILL mid-write Railway. No usar cuenta ADMIN para pruebas agresivas ni producir cambios destructivos.
+- **G3 NO-GO; G4 NO-GO.** R02, R06, R10, R19 conservan riesgo residual sin cierre formal; F5 sigue preparación aislada.
