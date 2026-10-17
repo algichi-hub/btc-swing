@@ -37,13 +37,14 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - **Evidencia:** [acta F1](F1_EJECUCION_Y_HALLAZGOS.md) y [CI 39013937477](https://github.com/algichi-hub/btc-swing/actions/runs/39013937477), 72 tests total PASS.
 
 ## G2 — Neon PostgreSQL desde cero
-**Estado:** PENDIENTE · **Decisión:** NO-GO
-- [ ] Crear esquema versionado nuevo y restricciones/índices.
-- [ ] Arranque con 0 señales, 0 operaciones, 0 resultados, 0 snapshots heredados.
-- [ ] Seed exclusivo de defaults y primer usuario mediante flujo seguro; sin credenciales en git.
-- [ ] Tests de constraints, transactions, upsert, concurrencia, rollback y alta inicial.
-- [ ] Revisión de reset destructivo, permisos y restore de V5.
-- [ ] Revisar R03 (retirado), R05, R12, R17, R21.
+**Estado:** COMPLETADO · **Decisión:** GO (persistencia F2 validada)
+- [x] Esquema versionado 0001, checksum, constraints, índices y 16 tablas.
+- [x] Neon Preview/Production verificados: 0 señales, 0 operaciones, 0 usuarios, 0 sesiones y 0 notificaciones.
+- [x] Procedimiento de seed defaults y bootstrap seguro (Argon2) probado en base efímera; no se ha creado usuario en Neon Production.
+- [x] Tests reales de constraints, transacciones, idempotencia, concurrencia, rollback y registro único de migración.
+- [x] Backup/restore ensayado sobre PostgreSQL descartable; revisión de permisos mínimos y reset administrativo diferido a G4.
+- [x] Riesgos R03 (fuera de alcance), R05/R12/R17/R21 revisados; riesgos residuales asignados a G3/G4.
+- **Evidencia:** [Acta F2](F2_EJECUCION_Y_HALLAZGOS.md), [CI 39015731740](https://github.com/algichi-hub/btc-swing/actions/runs/39015731740), 93/93 PASS.
 
 ## G3 — Worker Railway
 **Estado:** PENDIENTE · **Decisión:** NO-GO
@@ -93,6 +94,11 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - No hay pruebas de feed/scheduler/persistencia reales: asignadas a G3/G6.
 - La suite original V4 no estaba en ZIP: referencia nueva con riesgos residuales documentados.
 
+## Cierre F2 — 2026-10-17
+- G2 GO: 72 tests históricos F0/F1 + 7 unitarios F2 + 14 PostgreSQL F2 PASS, backup/restore PASS, política de roles restringidos PASS.
+- Dos ramas Neon separadas y vacías. Nunca se ha migrado histórico.
+- Pendiente para G3/G4: pool de conexiones, worker activo, credenciales de servicios y sesiones frontend.
+
 ## Registro de revisiones
 | Fecha | Gate | Cambio | Pruebas ejecutadas | Resultado |
 |---|---|---|---|---|
@@ -101,3 +107,5 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 | 2026-10-17 | G0 | Importación completa 56 archivos, smoke FastAPI y seguridad estática; límites aceptados | 12/12 PASS GitHub Actions 39012354521 | GO · pasar a F1 |
 
 | 2026-10-17 | G1 | Baseline Golden V4, fixtures sintéticos, lock CI y pruebas contratos/exits | 60/60 F1 + 12/12 F0 PASS (CI 39013937477) | GO · pasar a F2 |
+
+| 2026-10-17 | G2 | Neon vacía, esquema 0001, backend PostgreSQL opcional, bootstrap y roles restringidos | 93/93 PASS (CI 39015731740), backup/restore PASS, Neon Preview/Production verificado | GO · pasar a F3 |
