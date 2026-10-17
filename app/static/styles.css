@@ -1574,3 +1574,19 @@ h1 {
 	border: 1px solid #3b82f6;
 	color: #93c5fd;
 }
+
+.password-security {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid #33465f;
+  border-radius: 12px;
+  background: #101c2c;
+}
+.password-security h3 { margin: 0 0 12px; }
+.password-security .form-field { margin: 14px 0; }
+.password-security input {
+  display: block; width: 100%; max-width: 520px;
+  padding: 12px; border: 1px solid #40526b; border-radius: 8px;
+  color: #f5f7fb; background: #151f30; box-sizing: border-box;
+}
+.password-security button:disabled { opacity: .55; cursor: wait; }
