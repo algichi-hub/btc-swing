@@ -433,6 +433,39 @@ def logout(
     return {"ok": True, "message": "Sesión cerrada correctamente"}
 
 
+class PasswordChangePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    current_password: str
+    new_password: str
+
+
+@public_router.post("/api/auth/change-password")
+def change_password(
+    payload: PasswordChangePayload,
+    request: Request,
+    response: Response,
+    _origin: None = Depends(verify_csrf_origin),
+    _csrf: None = Depends(verify_csrf_token),
+    session_user: tuple[AuthSession, User] = Depends(get_current_session_and_user),
+    auth_service: AuthService = Depends(get_auth_service),
+) -> dict[str, bool]:
+    """Re-authenticate with old password, then rotate and revoke all sessions."""
+    _, user = session_user
+    if len(payload.current_password) > 256:
+        raise HTTPException(status_code=400, detail="Solicitud inválida")
+    if len(payload.new_password) < 16 or len(payload.new_password) > 256:
+        raise HTTPException(status_code=422, detail="La nueva contraseña debe tener entre 16 y 256 caracteres")
+    try:
+        changed = auth_service.change_password(user.id, payload.current_password, payload.new_password)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from None
+    if not changed:
+        raise HTTPException(status_code=400, detail="La contraseña actual no es correcta")
+    delete_session_cookie(response)
+    response.headers["Cache-Control"] = "no-store"
+    return {"ok": True}
+
+
 @viewer_router.get("/auth/csrf")
 def get_csrf(
     response: Response,
