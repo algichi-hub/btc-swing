@@ -71,3 +71,12 @@
 | T00-05 | NOT RUN | No se ha arrancado un worker cloud ni interceptado todas sus salidas |
 
 **Gate G0: NO-GO.** Código fuente aún no está en GitHub y no hay evidencias CI. No se ha usado Railway, Neon, Vercel ni Raspberry.
+
+## Iteración de integración GitHub — 2026-10-17
+
+- Se creó workflow CI `.github/workflows/f0-ci.yml` en la rama de desarrollo. **No consta ejecución PASS en GitHub Actions**: faltan los archivos `app/` y `requirements*.txt` en el árbol remoto.
+- Se dejó `scripts/import_f0_zip.ps1` para la importación reproducible del ZIP saneado: verifica SHA-256, trabaja solamente sobre `develop/f0-v4-baseline`, compila, ejecuta los tests y empuja el cambio si pasan; requiere entorno Windows con Python 3.11, Git y acceso de red/autenticación.
+- Se repitió `python -m pytest -q tests/test_f0_baseline.py` **local**: 11 PASS; `python -m compileall -q app tests`: PASS. Son resultados del ZIP local, **no** del repositorio GitHub.
+- Limitación del entorno: GitHub conectado permite escritura de contenido UTF-8, pero el ZIP binario de 56 archivos no pudo publicarse directamente mediante ese conector. El contenedor de pruebas no dispone de acceso DNS a github.com ni de git autenticado. **No se afirma completada la importación ni cerrado G0.**
+- Verificaciones pendientes: publicación real de 56 archivos seleccionados, ejecución de CI en HEAD de rama, smoke con APScheduler instalado, inspección integral de rutas externas/órdenes y validación de secretos/historial.
+- **Resultado formal G0: NO-GO**, por exit criteria incompletos. `main` y Raspberry intactos.
