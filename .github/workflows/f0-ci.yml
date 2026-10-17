@@ -70,3 +70,17 @@ jobs:
           BTC_TEST_DATABASE: 'YES'
           BTC_DATABASE_URL: postgresql://f2_test:f2_ci_only@localhost:5432/btc_f2_test
         run: python -m pytest -q tests/test_f2_postgres.py
+
+      - name: F2 backup and restore in disposable PostgreSQL
+        run: |
+          set -euo pipefail
+          CID="$(docker ps -q --filter ancestor=postgres:17 | head -n 1)"
+          test -n "$CID"
+          docker exec "$CID" sh -ec '
+            pg_dump -U f2_test -d btc_f2_test -Fc -f /tmp/btc_f2.dump
+            createdb -U f2_test btc_f2_restore
+            pg_restore -U f2_test -d btc_f2_restore --no-owner /tmp/btc_f2.dump
+            test "$(psql -U f2_test -d btc_f2_restore -Atc "SELECT count(*) FROM trade_signals")" -ge 1
+            test "$(psql -U f2_test -d btc_f2_restore -Atc "SELECT count(*) FROM schema_migrations")" -eq 1
+            test "$(psql -U f2_test -d btc_f2_restore -Atc "SELECT count(*) FROM users")" -ge 2
+          '
