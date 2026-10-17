@@ -1,82 +1,64 @@
-# F0 — Auditoría de origen / bitácora de ejecución
+# F0 — Informe de ejecución, evidencias y acta G0
 
-**Inicio:** 2026-10-17 · **Rama:** `develop/f0-v4-baseline` · **Estado:** EN CURSO · **Gate G0:** NO-GO
+**Fecha:** 2026-10-17 · **Estado F0:** FINALIZADA · **Gate G0:** GO (alcance de preparación/seguridad estática)  
+**Rama de implementación:** `develop/f0-v4-baseline`  
+**Referencia de CI verificada:** [GitHub Actions run 39012354521](https://github.com/algichi-hub/btc-swing/actions/runs/39012354521), commit `0cf1f31f8b73be3a7f33787c1fb942a089c8702e`.  
+La documentación de cierre posterior a ese commit no modifica la lógica y requiere su propia comprobación CI.
 
-## F0.01 — Inventario y huella verificable
-- ZIP original proporcionado por usuario: SHA-256 `00b5ab6345e60a586138b2b73847d8ed2f92c48944ce457d12a45bb305c0d0fe`.
-- 146 entradas ZIP, de las cuales **120 archivos**, 26 directorios; **37 fuentes Python**, 34 `.pyc`, 26 `.json`.
-- Estrategia `app/strategy` + `app/indicators`; mercado `app/market/hyperliquid.py`; motor `app/automation/trading_engine.py`; scheduler `app/automation/scheduler.py`; SQLite `app/storage`; auth `app/auth`; UI `app/static`; Telegram `app/notifications/telegram.py`.
-- `app/main.py` inicia `automation_scheduler.start()` en lifespan; intervalo esperado 300 s.
-- `execute_opportunity_trade` se implementa en el repositorio de almacenamiento: el nombre no demuestra ejecución real de órdenes. En el código revisado las llamadas `requests.post` directas se limitan al módulo Telegram; auditar flujos indirectos antes del gate.
-- Dependencias declaradas con rangos, **sin lock reproducible**. `APScheduler` no instalado en entorno de inspección.
-- Suite `tests/` ausente de ZIP; `pytest -q` no encuentra pruebas; no se acredita ninguna prueba funcional.
+## F0.01 — Inventario y trazabilidad del artefacto
+- Fuente: ZIP `v4.zip`, SHA-256 `00b5ab6345e60a586138b2b73847d8ed2f92c48944ce457d12a45bb305c0d0fe`.
+- 146 entradas ZIP, 120 archivos; 37 fuentes Python; 34 compilados `.pyc`; 26 JSON.
+- Motor `app/automation/trading_engine.py`, scheduler `app/automation/scheduler.py` iniciado en lifespan FastAPI, estrategia `app/strategy/`, indicadores `app/indicators/`, Hyperliquid `app/market/`, SQLite `app/storage/`, usuarios/sesiones `app/auth/`, frontend `app/static/`, Telegram `app/notifications/`.
+- Motor cada 300 segundos, indicador volumen relativo 1h umbral 1.05; la etiqueta `ALGORITHM_VERSION=V2.1-beta` debe tratarse en G1 sin alterar reglas.
+- No hay suite V4 original en el ZIP: 12 tests actuales son **nuevos y específicos de F0**, NO representan cobertura global del algoritmo.
 
-## F0.02 — Preparación de fuente limpia
-- Se preparó **un paquete ZIP saneado localmente**, NO publicado aún como código fuente en GitHub.
-- Incluidos **56 archivos** (fuente, configs no secretas, documentación); excluidos **64** (todo `data/`, certificados `.pem`, bases `.db`, compiled `.pyc` y `AGENTS.md`).
-- SHA-256 paquete limpio: `c2409cfd0d3d1c35b6a2d531b39f4cf3402c3a4e75a7f01c953c37da47d753bf`.
-- Búsqueda automatizada de patrones de claves privadas, tokens comunes y credenciales inline en archivos seleccionados: **0 hallazgos**. No constituye auditoría exhaustiva; revisión manual y escaneo de historial Git pendientes.
-- El paquete excluye los JSON de simulación: revisar expresamente si algunos deben publicarse como fixtures depurados en G1.
-- El ZIP saneado está disponible como entregable de esta sesión; su carga al repositorio aún está **pendiente**. No se tocaron ni Raspi ni servicios cloud.
+## F0.02 — Importación de código saneado
+- Importados 56 archivos seleccionados al árbol GitHub `develop/f0-v4-baseline` en dos commits:
+  - `9e9c4668c19014c55c539e73b3a8b3b44fab9e1c` (28 archivos).
+  - `ae4046042295047248f39e5c7c06c8debd88af02` (28 archivos).
+- Package local limpio `v5_f0_source_tests.zip`: SHA-256 `a5d8b9042162e3761e0e062765f58b3bc62cdfccca20b33caac5960318ff32cc`; en GitHub los archivos de texto se normalizaron a saltos de línea LF.
+- Excluidos datasets operacionales, base SQLite, certificados, ficheros `.pyc` y `.env`. `.gitignore` y paso CI bloquean formatos prohibidos.
+- No se introdujeron datos históricos en repositorio ni en Neon; Neon no ha sido creado todavía.
+- Incluidos `.env.example` sin credenciales, workflow CI y pruebas F0.
 
-## F0.03 — Arquitectura prevista
-- Railway `btc-v5-engine` (proceso persistente independiente) y `btc-v5-api` (FastAPI); una sola ejecución lógica con lock e idempotencia.
-- Neon DB nueva vacía, usuarios y defaults iniciales; sin histórico V4.
-- Vercel frontend HTTPS y PWA. Logs frontend con último ciclo y estado de freshness consultados desde Neon vía API. Web Push sustituye Telegram.
-- Falta diagrama de contratos detallado y revisión de variables de entorno con cada servicio.
+## F0.03 — Arquitectura y contratos de alto nivel
+- Railway: proceso persistente de motor Python, separado de API FastAPI. Una sola ejecución lógica; el lock distribuido será parte de F3.
+- Neon: PostgreSQL de nueva creación, **vacío**, esquema y migraciones pendientes de F2.
+- Vercel: HTTPS/JS frontend, futura PWA y ventana de logs con frescura del worker (F4 y F5).
+- Mensajería: Telegram permanece solo como código legado en la baseline; retirarlo y añadir Web Push corresponde a F5. `TELEGRAM_ENABLED=false` por defecto en F0.
+- Prohibidas órdenes reales desde despliegues de prueba; no hay infraestructura V5 operativa ni permisos de trading configurados.
 
-## F0.04 — Seguridad, externalidades y rollback
-- Detectada constante por defecto `AUTH_CSRF_SECRET` en `app/config.py`; producción valida la forma del secreto pero debe **prohibir explícitamente cualquier valor de desarrollo/predeterminado**.
-- Revisar rutas destructivas (reset), autorización y presencia de cabeceras de proxy.
-- El motor V5 debe comenzar **sin escritura real de órdenes**; Raspberry V4 no se modifica. Prueba E2E de salidas externas pendiente.
-- Rollback de V5 debe basarse en deploys/DB V5 y no depender de importar SQLite V4.
+## F0.04 — Seguridad y efectos externos
+- Hallazgo corregido: `APP_ENV=production` admitía el secreto CSRF por defecto de V4; la configuración de la baseline ahora lo rechaza. Test de regresión incluido.
+- `AUTH_COOKIE_SECURE`, allowed origins/hosts y Argon2 cubiertos con tests básicos.
+- Inspección estática de emisores HTTP: `requests.post` directo en Telegram; `requests.Session.post` del mercado consulta información de Hyperliquid. No se identifican interfaces explícitas de colocación de órdenes.
+- El test de patrones de órdenes es **limitado a las fuentes actuales**; no demuestra que una implementación futura pueda operar sin un control de salidas. La prueba de no-ejecución en worker real se repite obligatoriamente en G3/G6.
+- No se ha realizado pentest, auditoría de paquetes ni análisis de secretos exhaustivo del historial Git: controles diferidos a G1/G4. Riesgos R06/R15 permanecen abiertos.
 
-## Pruebas G0 — registro de ejecución real
+## Evidencia de pruebas G0
 
-| ID | Prueba | Resultado | Evidencia / límite |
+| ID | Test / verificación | Resultado | Evidencia |
 |---|---|---|---|
-| T00-01 | Integridad ZIP y análisis AST de 37 fuentes Python | **PASS parcial** | SHA-256 registrado; 37/37 AST parse OK. Falta smoke de arranque. |
-| T00-02 | Escaneo inicial de secretos en fuente incluida | **PASS parcial** | 0 patrones detectados; pendiente auditoría exhaustiva e historial tras upload. |
-| T00-03 | Declaración/imports y compilación | **NO-GO pendiente** | Sintaxis 37/37 OK; APScheduler ausente; no hay instalación bloqueada/reproducible. |
-| T00-04 | Inventario de entrypoints y externalidades | **PARCIAL** | Lifespan/worker/Telegram identificados; falta revisión completa de call graph. |
-| T00-05 | Ausencia de órdenes reales desde V5 | **NOT RUN** | Aún no existe implementación V5 aislada. |
+| T00-01 | Hash de artefacto, 37 fuentes Python, compilación y smoke FastAPI | **PASS** | SHA-256 registrado, `compileall` CI y TestClient con esquema limpio |
+| T00-02 | Escaneo básico de secretos y política de archivos prohibidos | **PASS (alcance definido)** | escaneo fuente y GitHub Actions `Excluded file policy`; revisión integral en G4 |
+| T00-03 | Dependencias y arranque aislado | **PASS** | GitHub Actions instala requisitos, 12 tests; TestClient ejecuta lifespan con scheduler mock |
+| T00-04 | Inventario de entrypoints, llamadas y salidas | **PASS (estático)** | revisión de módulos `main`, `scheduler`, `hyperliquid`, `telegram` y test AST |
+| T00-05 | Ausencia de órdenes reales en baseline | **PASS (estático)** | no se identificaron rutas de envío de órdenes; sin worker vivo, repetición E2E en G3/G6 |
 
-## Bloqueos para G0
-1. Publicar fuente saneada en la rama, verificando ningún secreto/archivo prohibido en árbol/historial; evitar sobreescribir documentos maestros.
-2. Recuperar/crear la suite de pruebas y dependencias bloqueadas (continuará en F1, pero disponer de smoke en G0).
-3. Terminar trazabilidad de efectos externos y controlar/deshabilitar órdenes reales.
-4. Registrar contrato de servicios y checklist de variables sin valores secretos.
-5. Completar T00-01 .. T00-05; realizar revisión de riesgos R01/R06/R11/R15/R18 y acta de gate.
+### Ejecución verificable
+- [CI 39012354521](https://github.com/algichi-hub/btc-swing/actions/runs/39012354521): **12 tests PASS**, instalación de dependencias PASS, compilación PASS y política de ficheros excluidos PASS.
+- Incidencia previa: fallo por ausencia de `httpx2` requerido por Starlette TestClient; corregido en `requirements-dev.txt` y repetido hasta PASS.
+- Pruebas con sistema en producción / Raspberry: **no ejecutadas, deliberadamente fuera de F0**.
+- Pruebas integradas Railway/Neon/Vercel: **no ejecutadas; fuera de F0**.
 
-**Resultado:** F0 comenzada, **G0 NO-GO**. Las comprobaciones estáticas son reales; no se afirma que el backend arranque ni que la seguridad operativa esté validada.
+## Revisión de riesgos y decisión formal
+- R01 (paridad algoritmo) **abierto → G1**: no atribuir paridad a los tests F0.
+- R06 (secretos/autenticación pública) **abierto → G4**: mejora CSRF entregada; completar seguridad E2E.
+- R11 (suite de pruebas original ausente) **abierto → G1**: crear golden masters críticos.
+- R15 (doble motor / efectos externos) **abierto → G3/G6**: no hay motor V5 desplegado.
+- R18 (dependencias no fijadas) **abierto → G1**: instalar desde constraints en G1; F0 prueba reproducibilidad de instalación en runner.
 
-## Iteración F0.02–F0.04 · 2026-10-17
+**GO G0 autorizado para iniciar F1**, limitado a importación, inventario y controles estáticos/smoke. No implica aprobación de algoritmo, migración de base de datos, ejecución Railway ni trading real. Se mantiene `main` estable hasta la integración revisada.
 
-### Código y pruebas
-- Se generó localmente el artefacto **`v5_f0_source_tests.zip`**, 56 archivos, SHA-256 `a5d8b9042162e3761e0e062765f58b3bc62cdfccca20b33caac5960318ff32cc`. Contiene la fuente saneada V4, el cambio de seguridad en `app/config.py` y la suite de pruebas.
-- Se añadió a esta rama **`tests/test_f0_baseline.py`**. IMPORTANTE: el código de `app/` aún no ha sido publicado en GitHub; por tanto **la ejecución de tests documentada abajo fue local sobre el ZIP saneado y no es una ejecución CI del repositorio**. La suite en GitHub quedará pendiente hasta importar el código.
-- **Defecto confirmado:** el secreto CSRF de ejemplo incorporado en V4 era aceptado en `APP_ENV=production`. El test de regresión falló contra V4 original: **10 PASS, 1 FAIL**. Modificación de seguridad aplicada únicamente a la copia local V5: prohibir secreto predeterminado en producción, manteniendo flujos de desarrollo. Re-ejecución: **11 PASS, 0 FAIL**. No se ha tocado la Pi.
-- `python -m compileall -q app tests`: PASS. `pytest -q tests/test_f0_baseline.py`: 11 PASS local. Los tests incluyen AST de fuentes, inventario `requests.post`, ausencia de patrones conocidos de órdenes, configuración segura, Argon2, token de sesión, umbral volumen, scheduler 300 s y scripts de frontend.
-- Revisión estática de HTTP: se encontró `requests.post` en `app/notifications/telegram.py`, sin `requests.put/delete/patch` directas; no demuestra ausencia completa de órdenes en librerías/rutas indirectas.
-- `APScheduler` no está instalado en el runtime de inspección; **no** se ha demostrado el arranque completo ni se ha ejecutado regresión funcional del motor. No hay `tests/` originales en el ZIP V4.
-- Paquete GitHub pendiente: **no dar G0 por aprobado hasta importar `app/` y ejecutar estos tests en el checkout real y en CI**.
-
-### Estado G0 tras iteración
-| Test | Estado | Evidencia |
-|---|---|---|
-| T00-01 | PARCIAL | AST y compilación PASS; smoke arranque pendiente |
-| T00-02 | PARCIAL | Filtrado fuente y escaneo de patrones; falta escaneo historial y revisión profunda |
-| T00-03 | PARCIAL | compilación PASS; dependencia APScheduler ausente en este runtime |
-| T00-04 | PARCIAL | call sites HTTP directos inventariados; pendiente interacciones indirectas |
-| T00-05 | NOT RUN | No se ha arrancado un worker cloud ni interceptado todas sus salidas |
-
-**Gate G0: NO-GO.** Código fuente aún no está en GitHub y no hay evidencias CI. No se ha usado Railway, Neon, Vercel ni Raspberry.
-
-## Iteración de integración GitHub — 2026-10-17
-
-- Se creó workflow CI `.github/workflows/f0-ci.yml` en la rama de desarrollo. **No consta ejecución PASS en GitHub Actions**: faltan los archivos `app/` y `requirements*.txt` en el árbol remoto.
-- Se dejó `scripts/import_f0_zip.ps1` para la importación reproducible del ZIP saneado: verifica SHA-256, trabaja solamente sobre `develop/f0-v4-baseline`, compila, ejecuta los tests y empuja el cambio si pasan; requiere entorno Windows con Python 3.11, Git y acceso de red/autenticación.
-- Se repitió `python -m pytest -q tests/test_f0_baseline.py` **local**: 11 PASS; `python -m compileall -q app tests`: PASS. Son resultados del ZIP local, **no** del repositorio GitHub.
-- Limitación del entorno: GitHub conectado permite escritura de contenido UTF-8, pero el ZIP binario de 56 archivos no pudo publicarse directamente mediante ese conector. El contenedor de pruebas no dispone de acceso DNS a github.com ni de git autenticado. **No se afirma completada la importación ni cerrado G0.**
-- Verificaciones pendientes: publicación real de 56 archivos seleccionados, ejecución de CI en HEAD de rama, smoke con APScheduler instalado, inspección integral de rutas externas/órdenes y validación de secretos/historial.
-- **Resultado formal G0: NO-GO**, por exit criteria incompletos. `main` y Raspberry intactos.
+## Siguiente fase
+F1: fixtures/golden master V4, recuperación o sustitución justificada de la suite de regresión, dependencias fijas y paridad algorítmica determinista. Estado inicial F1/G1: **PENDIENTE/NO-GO**.
