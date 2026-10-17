@@ -118,4 +118,6 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 
 | 2026-10-17 | G2 | Neon vacía, esquema 0001, backend PostgreSQL opcional, bootstrap y roles restringidos | 93/93 PASS (CI 39015731740), backup/restore PASS, Neon Preview/Production verificado | GO · pasar a F3 |
 
-| 2026-10-17 | G3 | Worker Python aislado, lock PG, slots, heartbeat, pruebas de crash y F1 | CI F3 PASS; Railway Preview NOT RUN | NO-GO por validación cloud pendiente |
+| 2026-10-17 | G3 | Worker Python aislado, lock PG, slots, heartbeat, pruebas de crash y F1 | CI F3 PASS; Railway Preview ya desplegado; 2 ciclos OK, pruebas adversariales restantes NOT RUN | NO-GO por validación cloud pendiente |
+
+| 2026-10-17 | G3 Preview | Worker Railway desplegado SUCCESS, 2 ciclos de 300 s OK, heartbeat/snapshots y reinicio, escala temporal 2→1 | SQL Neon + Railway Preview; pendiente fault-injection real y nuevo slot concurrente | NO-GO parcial |
