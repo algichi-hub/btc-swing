@@ -51,7 +51,7 @@ jobs:
       - name: Syntax compilation
         run: python -m compileall -q app tests
       - name: Run F0 and F1 algorithm regression
-        run: python -m pytest -q tests/test_f0_baseline.py tests/test_f0_smoke.py tests/test_f1_golden.py tests/test_f1_contracts.py tests/test_f1_exits.py tests/test_f2_unit.py
+        run: python -m pytest -q tests/test_f0_baseline.py tests/test_f0_smoke.py tests/test_f1_golden.py tests/test_f1_contracts.py tests/test_f1_exits.py tests/test_f2_unit.py tests/test_f3_unit.py
       - name: Excluded file policy
         run: |
           python - <<'PY'
@@ -96,3 +96,10 @@ jobs:
             test "$(psql -U f2_test -d btc_f2_restore -Atc "SELECT count(*) FROM schema_migrations")" -eq 1
             test "$(psql -U f2_test -d btc_f2_restore -Atc "SELECT count(*) FROM users")" -ge 2
           '
+
+      - name: F3 PostgreSQL worker concurrency and crash tests
+        env:
+          BTC_DB_BACKEND: postgres
+          BTC_TEST_DATABASE: 'YES'
+          BTC_DATABASE_URL: postgresql://f2_test:f2_ci_only@localhost:5432/btc_f2_test
+        run: python -m pytest -q tests/test_f3_postgres.py

@@ -16,5 +16,6 @@ Migración controlada de la aplicación V4 (Raspberry Pi) a **Railway (motor Pyt
 - [Auditoría V4 y plan de riesgos V5](docs/AUDITORIA_V4_RIESGOS_V5.md)
 - [Gates, pruebas y evidencias](docs/GATES_Y_EVIDENCIAS.md)
 - **[Acta F2 — Neon PostgreSQL, tests, roles y riesgos](docs/F2_EJECUCION_Y_HALLAZGOS.md)**
+- **[F3 — Worker Railway: código, tests y bloqueos G3](docs/F3_EJECUCION_Y_HALLAZGOS.md)**
 
-> Estado: F0, F1 y F2 validados; proyecto y esquema Neon Preview/Production creados, **sin datos históricos ni credenciales de aplicación activadas**. Railway y Vercel pendientes de F3/F4.
+> Estado: F0, F1 y F2 validados; proyecto y esquema Neon Preview/Production creados, **sin datos históricos ni credenciales de aplicación activadas**. F3 código worker testado y migración 0002 en Neon Preview, **G3 NO-GO hasta Railway Preview**. Vercel pendiente de F4.

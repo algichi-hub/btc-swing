@@ -1,6 +1,6 @@
 # Auditoría V4 y registro vivo de riesgos de V5
 
-**Versión:** 1.4 · **Fecha:** 2026-10-17 · **Estado:** F0/G0, F1/G1 y F2/G2 verificados; riesgos residuales abiertos para G3–G6.
+**Versión:** 1.5 · **Fecha:** 2026-10-17 · **Estado:** F0–F2 GO; F3 código testado pero G3 NO-GO por despliegue Railway pendiente.
 
 ## 1. Alcance y límites de la evidencia
 Fuente: inspección estática del `v4.zip` proporcionado (146 entradas). No se ha hecho auditoría dinámica de la Raspberry, ni se ha ejecutado la regresión original. La base SQLite incluida en ZIP está vacía (0 bytes) y no hay carpeta de tests en este artefacto. La documentación V4 menciona 563 tests en una baseline anterior: **no** es un resultado validado para este ZIP.
@@ -126,6 +126,23 @@ La valoración cuantitativa inicial del registro permanece conservadora hasta pr
 | R06 | **Nuevo hallazgo:** API Neon creó roles con membresía `neon_superuser`. Se eliminaron los cuatro roles elevados creados durante F2 y se sustituyeron por roles SQL sin CREATEDB/CREATEROLE/membresía administrativa. Permisos segregados confirmados en ambas ramas y CI. | Credenciales/secretos runtime F3/G4 |
 
 No se reduce automáticamente el riesgo cuantitativo de producción sin validación de servicios cloud. Los controles destructivos de reset permanecen en G4.
+
+## 5.4. Revisión parcial F3 — Sin GO de G3 (2026-10-17)
+
+Evidencias: [acta F3](F3_EJECUCION_Y_HALLAZGOS.md), tests PostgreSQL efímero y Neon Preview `0002_worker`. No existe evidencia de despliegue Railway real; no se rebaja riesgo de producción.
+
+| Riesgo | Estado tras implementación F3 | Prueba bloqueante pendiente |
+|---|---|---|
+| R01 | Golden G1 conservado, engine real contra dashboard simulado | Feed y pipeline Railway |
+| R02 | Advisory session lock + slots únicos, pruebas concurrentes en CI | Crash/redeploy real, duplicados de efectos |
+| R04 / R24 | Heartbeat persistente y stale DB, logs sanitizados | Worker parado en Railway y detección real |
+| R08 / R09 | Simulación de fallo + UTC slots | Rate limit/timeout Hyperliquid desde Railway, cierre de velas |
+| R12 | RUNNING reintentable, sin histórico Raspberry | Recuperación íntegra estado V5 tras redeploy |
+| R14 | Telegram prohibido en worker, módulo legado aún presente | F5 sustitución Web Push y comprobación de paridad |
+| R17 | Conexiones por operación a PostgreSQL; sin pool | Prueba de carga y presupuesto Railway |
+| R06 | Roles runtime de Neon sin passwords, separados y limitados | Configurar secretos Railway/Neon vía integración segura |
+
+**G3 permanece NO-GO**, no declarar F3 validada operativamente solo por CI.
 
 ## 6. Controles de cambio
 - No cambiar algoritmo salvo incidencia documentada y tests comparativos.

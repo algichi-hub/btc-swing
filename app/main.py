@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import os
 from datetime import datetime, timedelta, timezone
 import hmac
 from typing import Any
@@ -274,6 +275,12 @@ automation_scheduler = AutomationScheduler(
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     settings.validate_runtime()
+    if os.environ.get('BTC_PROCESS_ROLE') == 'api':
+        if os.environ.get('BTC_DB_BACKEND') != 'postgres':
+            raise RuntimeError('Cloud API requires PostgreSQL')
+        # Cloud API never launches market scheduler, replay, bootstrap, or DDL.
+        yield
+        return
     initialize(settings_service.database_path)
     settings_service.apply_defaults()
     recover_downtime_opportunity(
