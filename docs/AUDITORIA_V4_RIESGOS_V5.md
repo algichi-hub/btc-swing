@@ -1,6 +1,6 @@
 # Auditoría V4 y registro vivo de riesgos de V5
 
-**Versión:** 1.2 · **Fecha:** 2026-10-17 · **Estado:** F0/G0 verificados; riesgos residuales abiertos para G1–G6.
+**Versión:** 1.3 · **Fecha:** 2026-10-17 · **Estado:** F0/G0 y F1/G1 verificados; riesgos residuales abiertos para G2–G6.
 
 ## 1. Alcance y límites de la evidencia
 Fuente: inspección estática del `v4.zip` proporcionado (146 entradas). No se ha hecho auditoría dinámica de la Raspberry, ni se ha ejecutado la regresión original. La base SQLite incluida en ZIP está vacía (0 bytes) y no hay carpeta de tests en este artefacto. La documentación V4 menciona 563 tests en una baseline anterior: **no** es un resultado validado para este ZIP.
@@ -98,6 +98,19 @@ Cada gate tendrá un registro en `docs/GATES_Y_EVIDENCIAS.md` con **casos de pru
 | R18 | Dependencias instaladas satisfactoriamente en runner Python 3.11, pero **sin lock congelado** | G1 fijación de versiones y CI reproducible |
 
 **Decisión G0: GO limitado a la fase de preparación.** Los riesgos anteriores NO se dan por cerrados; su tratamiento bloquea los gates posteriores si queda incompleto.
+
+## 5.2. Revisión G1 — Golden Master V4 (2026-10-17)
+
+**Evidencia:** [CI 39013937477](https://github.com/algichi-hub/btc-swing/actions/runs/39013937477), 60/60 F1 + 12/12 F0 PASS; [acta F1](F1_EJECUCION_Y_HALLAZGOS.md). Suite V4 original no incluida en ZIP, sustituida por casos congelados desde el código original.
+
+| Riesgo | Revisión G1 | Próximo control |
+|---|---|---|
+| R01 | Mitigado para 34 vectores V4 + pruebas de topología/TP/SL/PnL; **riesgo residual medio/alto** para ejecución completa | G3 comparativa de ciclos y G6 soak |
+| R09 | UTC, velas cerradas y DST Madrid primavera/otoño cubiertos; **riesgo residual** con feeds/scheduler real | G3/G6 |
+| R11 | Suite original ausente; se construyeron 60 nuevos tests y fixture V4 verificable; **riesgo residual** de escenarios no cubiertos | G3 ampliar trayectorias, G6 regresión |
+| R18 | Dependencias fijadas en lock de 38 paquetes para Python 3.11/Ubuntu y verificadas en CI; **riesgo residual** ante otro runtime | G3 build Railway equivalente |
+
+La valoración cuantitativa inicial del registro permanece conservadora hasta pruebas de integración: no rebajar automáticamente probabilidad/impacto de producción a partir de tests unitarios.
 
 ## 6. Controles de cambio
 - No cambiar algoritmo salvo incidencia documentada y tests comparativos.
