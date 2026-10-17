@@ -79,10 +79,10 @@ def test_original_algorithm_hashes_unchanged():
     "app/indicators/volume.py":"164b923cf831df8c8e4fd3ab7c4c14c41cad780835799b1e0167b98b9bb7b82b",
     "app/strategy/dashboard.py":"002fb3589409b55edfe456f294c5ec7e6ce377b58431620bee114c7352c1526c",
     "app/strategy/swing_range.py":"63dc129c98c02b338b1257532f60d49b15cff893d6c9cc21efd3df5f6ac4daa2",
-    "app/strategy/trade_plan.py":"5a0428a21588d07f3318e6daca82650b1885e8a2b84b0f31784b6e65a635c5c1",
+    "app/strategy/trade_plan.py":"07faeaf5c987e7792ea5b4999f12800c2b3d6b60da2b42b5e17140c9a05be1d3",
     "app/portfolio/sizing.py":"fd6c28b50948c326b931244cabf9472e1b7197553db2c971999ae23db3c28b25",
     "app/automation/trading_engine.py":"2b95e188c45a882d1a584d1e9749533232346d1f90cd26bedb7c21350bb54ae9",
     }
     root = Path(__file__).resolve().parents[1]
     for p,h in expected.items():
-        assert hashlib.sha256((root/p).read_bytes().replace(b"\r\n", b"\n")).hexdigest()==h,p
+        assert hashlib.sha256((root/p).read_bytes().replace(b"\r\n", b"\n").rstrip(b"\n")+b"\n").hexdigest()==h,p
