@@ -22,3 +22,5 @@ jobs:
           test "$result" = '401' || test "$result" = '500'
 
 # Retry once after category-logging deploy
+
+# Probe after official Neon DSN restoration
