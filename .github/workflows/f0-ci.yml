@@ -51,7 +51,7 @@ jobs:
       - name: Syntax compilation
         run: python -m compileall -q app tests
       - name: Run F0 and F1 algorithm regression
-        run: python -m pytest -q tests/test_f0_baseline.py tests/test_f0_smoke.py tests/test_f1_golden.py tests/test_f1_contracts.py tests/test_f1_exits.py tests/test_f2_unit.py tests/test_f3_unit.py
+        run: python -m pytest -q tests/test_f0_baseline.py tests/test_f0_smoke.py tests/test_f1_golden.py tests/test_f1_contracts.py tests/test_f1_exits.py tests/test_f2_unit.py tests/test_f3_unit.py tests/test_f4_operations.py
       - name: Excluded file policy
         run: |
           python - <<'PY'
