@@ -98,3 +98,24 @@ def test_redaction_contract(raw):
 def test_control_character_and_code_sanitizing():
     assert operations._sanitize_message("ready\nhello") == "ready hello"
     assert operations._sanitize_code("SQL;DROP TABLE") == "REDACTED"
+
+
+def test_f4_initial_admin_sql_is_argon2id_and_one_time():
+    from app.storage.bootstrap import build_initial_admin_sql
+    password = "never-put-this-password-in-github-12345"
+    sql = build_initial_admin_sql("Admin_1", password)
+    assert password not in sql
+    assert "$argon2id$" in sql
+    assert "WHERE NOT EXISTS (SELECT 1 FROM users)" in sql
+    assert "LOCK TABLE users" in sql
+    assert "SELECT 'admin_1'" in sql
+    assert "\\n" not in sql
+    assert "\n" in sql
+
+
+def test_f4_initial_admin_sql_rejects_unsafe_or_short_password():
+    from app.storage.bootstrap import build_initial_admin_sql
+    with pytest.raises(ValueError):
+        build_initial_admin_sql("admin", "short")
+    with pytest.raises(ValueError):
+        build_initial_admin_sql("admin';DROP", "secure-and-long-password-12345")

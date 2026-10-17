@@ -87,3 +87,17 @@ def test_vercel_proxy_only_routes_api_to_railway():
     assert len(proxy)==1
     assert proxy[0]["destination"].startswith("https://btc-v5-api-preview-preview.up.railway.app/api/")
     assert not any("DATABASE_URL" in str(r) or "SECRET" in str(r) for r in config["rewrites"])
+
+
+def test_f4_admin_bootstrap_does_not_require_ddl():
+    from pathlib import Path
+    src=(Path(__file__).resolve().parents[1]/"app/storage/bootstrap.py").read_text()
+    assert "initialize_pg()" not in src
+    from app.storage.postgres import connect_pg
+    with connect_pg() as db:
+        row=db.execute("""
+          SELECT has_table_privilege('btc_v5_web_app','users','INSERT') AS can_create_user,
+                 has_schema_privilege('btc_v5_web_app','public','CREATE') AS can_change_schema
+        """).fetchone()
+    assert row["can_create_user"] is True
+    assert row["can_change_schema"] is False

@@ -48,3 +48,9 @@ El usuario autorizó progresar desde F3 con el riesgo de crash mid-cycle conocid
 - R02: riesgo F3 conocido y aceptado para avanzar desarrollo, no cerrado.
 
 **No se modifica Raspberry ni Neon Production.**
+
+## F4 bootstrap restringido y guía de activación
+- Hallazgo posterior: el bootstrap F2 intentaba inicializar migraciones con el rol web, violando separación DDL. Se ha corregido y probado en CI: el bootstrap ya no llama initialize_pg() y requiere esquema existente.
+- Nuevo modo interactivo --emit-sql genera SQL de alta con hash Argon2id en el PC, sin conexión remota ni password en el SQL resultante; bloquea alta si la tabla users no está vacía.
+- [Guía segura de activación F4 Preview](F4_ACTIVAR_PREVIEW.md): rol Neon web, credenciales privadas Railway, secreto base64url, bootstrap admin y pruebas E2E pendientes.
+- G4 sigue NO-GO hasta validación real del login Vercel→Railway→Neon; no reutilizar credencial del worker.
