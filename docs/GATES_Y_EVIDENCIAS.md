@@ -2,7 +2,7 @@
 
 **Referencia vinculante:** [PLAN_MAESTRO_V5.md](PLAN_MAESTRO_V5.md) establece fases F0–F6, subfases F#.##, gates G0–G6, entry/exit criteria y catálogo de pruebas T##-##. Este archivo registra la ejecución y evidencias reales; no sustituye el plan.
 
-**Política:** todos los gates comienzan **PENDIENTE / NO-GO**. Ningún gate se aprueba automáticamente. En cada gate actualizar este archivo y `AUDITORIA_V4_RIESGOS_V5.md` con pruebas ejecutadas, evidencias y riesgo residual.
+**Política:** cada gate comienza **PENDIENTE / NO-GO** y solo cambia a GO tras pruebas reales y revisión de riesgos. Ningún gate se aprueba automáticamente. En cada gate actualizar este archivo y `AUDITORIA_V4_RIESGOS_V5.md` con pruebas ejecutadas, evidencias y riesgo residual.
 
 ## Formato de acta obligatorio
 - Gate / estado / fecha / responsable:
@@ -16,13 +16,16 @@
 No confundir «desarrollado» con «verificado»: PASS exige ejecución registrada. SKIP necesita motivo y aceptación del riesgo; ninguna prueba crítica puede quedar SKIP al cerrar un gate.
 
 ## G0 — Auditoría de origen y alcance
-**Estado:** PENDIENTE · **Decisión:** NO-GO
-- [ ] Versionar fuente V4 sin secretos ni datos privados.
-- [ ] Registrar hash de artefacto, dependencias, configuración no secreta y arquitectura aprobada.
+**Estado:** COMPLETADO · **Decisión:** GO (preparación técnica y comprobaciones estáticas/smoke)
+- [x] Versionar fuente V4 saneada sin BBDD, certificados ni datos privados.
+- [x] Registrar hash de artefacto, dependencias, configuración no secreta y arquitectura aprobada.
 - [x] Registrar decisión de **Neon nuevo y vacío** (sin ETL histórico).
 - [x] Acordar Railway motor/API; Vercel frontend/PWA; Web Push; login sin MFA.
-- [ ] Identificar vías externas que pudieran colocar órdenes reales y bloquearlas en V5 inicial.
-- [ ] Revisar R01, R06, R11, R15, R18.
+- [x] Identificar interfaces de salida y constatar que la baseline no contiene emisores explícitos de órdenes; el bloqueo dinámico se valida en G3 y G6.
+- [x] Revisar R01, R06, R11, R15, R18 y asignar controles a fases posteriores.
+- [x] CI sobre HEAD de fuente importada: compilación, política de archivos y 12 tests PASS.
+- **Evidencia principal:** [GitHub Actions 39012354521](https://github.com/algichi-hub/btc-swing/actions/runs/39012354521).
+- **Detalle y limitaciones:** [Acta F0](F0_EJECUCION_Y_HALLAZGOS.md). GO no significa equivalencia del algoritmo ni pruebas de servicios cloud.
 
 ## G1 — Baseline de algoritmo
 **Estado:** PENDIENTE · **Decisión:** NO-GO
@@ -79,13 +82,14 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - [ ] Revisar TODOS los riesgos abiertos y aceptación explícita residual.
 - [ ] Registrar snapshot/commit de release y aprobación del usuario.
 
-## Ejecución F0 en curso (2026-10-17)
-- Se ejecutaron 11 tests offline PASS únicamente sobre archivo ZIP local; no CI. No se ha demostrado arranque integrado.
-- Rama `develop/f0-v4-baseline`: suite, política gitignore, workflow CI y script de importación preparados; **fuente app/ no publicada todavía**.
-- **G0 = NO-GO**; T00-01/02/03/04 parciales, T00-05 sin ejecución integral.
-- Consultar [bitácora F0](F0_EJECUCION_Y_HALLAZGOS.md).
+## Cierre F0 — 2026-10-17
+- **G0 GO** según comprobaciones definidas de preparación/seguridad estática; [12 pruebas ejecutadas en CI](https://github.com/algichi-hub/btc-swing/actions/runs/39012354521).
+- Limitaciones fuera de G0: suite algorítmica original ausente, engine live no probado, sin despliegues Railway/Neon/Vercel.
+- Riesgos R01/R06/R11/R15/R18 mantienen controles pendientes con gate asignado. G1–G6 continúan en NO-GO.
 
 ## Registro de revisiones
 | Fecha | Gate | Cambio | Pruebas ejecutadas | Resultado |
 |---|---|---|---|---|
 | 2026-10-17 | Planificación | Se crea checklist, Neon vacío, observabilidad frontend; no se ejecutan tests | Ninguna | Todos pendientes / NO-GO |
+
+| 2026-10-17 | G0 | Importación completa 56 archivos, smoke FastAPI y seguridad estática; límites aceptados | 12/12 PASS GitHub Actions 39012354521 | GO · pasar a F1 |
