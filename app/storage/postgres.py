@@ -25,7 +25,7 @@ def _translate(sql: str) -> tuple[str, bool]:
     if original.upper() == "BEGIN IMMEDIATE":
         return "SELECT pg_advisory_xact_lock(5022026)", False
     ignore = bool(re.match(r"(?is)^INSERT\s+OR\s+IGNORE\s+INTO\b", original))
-    out = re.sub(r"(?is)^INSERT\s+OR\s+IGNORE\s+INTO\b", "INSERT INTO", sql)
+    out = re.sub(r"(?is)^(\s*)INSERT\s+OR\s+IGNORE\s+INTO\b", r"\1INSERT INTO", sql)
     out = re.sub(r"(?is)username\s*=\s*\?\s+COLLATE\s+NOCASE", "lower(username) = lower(?)", out)
     if "COLLATE NOCASE" in out.upper():
         raise NotImplementedError("SQLite COLLATE NOCASE requires an explicit PostgreSQL translation")
