@@ -1,6 +1,6 @@
 # Auditoría V4 y registro vivo de riesgos de V5
 
-**Versión:** 1.1 · **Fecha:** 2026-10-17 · **Estado:** planificación; riesgos pendientes de validación.
+**Versión:** 1.2 · **Fecha:** 2026-10-17 · **Estado:** F0/G0 verificados; riesgos residuales abiertos para G1–G6.
 
 ## 1. Alcance y límites de la evidencia
 Fuente: inspección estática del `v4.zip` proporcionado (146 entradas). No se ha hecho auditoría dinámica de la Raspberry, ni se ha ejecutado la regresión original. La base SQLite incluida en ZIP está vacía (0 bytes) y no hay carpeta de tests en este artefacto. La documentación V4 menciona 563 tests en una baseline anterior: **no** es un resultado validado para este ZIP.
@@ -84,6 +84,20 @@ Cada gate tendrá un registro en `docs/GATES_Y_EVIDENCIAS.md` con **casos de pru
 - **G4** — API y logs: seguridad end-to-end, contratos, estados de log, filtros, sin secretos, latencia.
 - **G5** — Vercel PWA y push: manifest/SW, instalación, notificaciones y reintentos, Telegram ausente.
 - **G6** — Producción: shadow/aislamiento, decisión cutover, rollback, control de riesgos residuales.
+
+## 5.1. Revisión de riesgos en cierre G0 (2026-10-17)
+
+**Evidencia:** [GitHub Actions run 39012354521](https://github.com/algichi-hub/btc-swing/actions/runs/39012354521), **12 tests PASS** sobre fuente V4 saneada publicada en `develop/f0-v4-baseline`, compilación y política de archivos excluidos PASS; [acta F0](F0_EJECUCION_Y_HALLAZGOS.md).
+
+| Riesgo | Resultado G0 | Control futuro |
+|---|---|---|
+| R01 | Lógica importada sin reescritura intencionada; **sin paridad algorítmica todavía** | G1 golden master, G3 comprobación pipeline |
+| R06 | Rechazo de secreto CSRF predeterminado en producción y escaneo inicial sin alertas; **no auditoría E2E** | G4 auth/TLS/CSRF/RBAC/secretos |
+| R11 | Suite original ausente; 12 nuevos tests F0 cubren solo inventario/seguridad/smoke | G1 recuperación o reconstrucción de pruebas de estrategia |
+| R15 | Sin despliegue V5 ni emisor explícito de órdenes encontrado en revisión estática; Raspberry intacta | G3/G6 aislamiento y pruebas de no órdenes reales |
+| R18 | Dependencias instaladas satisfactoriamente en runner Python 3.11, pero **sin lock congelado** | G1 fijación de versiones y CI reproducible |
+
+**Decisión G0: GO limitado a la fase de preparación.** Los riesgos anteriores NO se dan por cerrados; su tratamiento bloquea los gates posteriores si queda incompleto.
 
 ## 6. Controles de cambio
 - No cambiar algoritmo salvo incidencia documentada y tests comparativos.
