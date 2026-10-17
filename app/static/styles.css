@@ -1590,3 +1590,10 @@ h1 {
   color: #f5f7fb; background: #151f30; box-sizing: border-box;
 }
 .password-security button:disabled { opacity: .55; cursor: wait; }
+
+.recovery-security { margin-top: 18px; padding: 16px; border: 1px solid #354763; border-radius: 10px; }
+.recovery-security h4 { margin: 0 0 10px; }
+#recovery-codes-output { padding: 14px; background: #101723; border-radius: 8px; white-space: pre-wrap; overflow-wrap: anywhere; user-select: all; }
+.recover-link { margin-top: 15px; color: #9fc4fb; border: 0; padding: 6px 0; background: transparent; cursor: pointer; text-align: left; text-decoration: underline; }
+#recoveryForm { margin-top: 18px; }
+#recoveryForm h2 { font-size: 18px; }
