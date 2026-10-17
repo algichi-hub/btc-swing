@@ -47,14 +47,16 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - **Evidencia:** [Acta F2](F2_EJECUCION_Y_HALLAZGOS.md), [CI 39015731740](https://github.com/algichi-hub/btc-swing/actions/runs/39015731740), 93/93 PASS.
 
 ## G3 — Worker Railway
-**Estado:** PENDIENTE · **Decisión:** NO-GO
-- [ ] Worker desacoplado de FastAPI; arranque/paro limpio.
-- [ ] Una ejecución lógica por periodo en pruebas de dos instancias, redeploy y crash.
-- [ ] Igualdad de señales y trayectoria del estado con fixtures V4.
-- [ ] Reinicio recupera *estado V5* sin duplicados, sin estados anteriores de Raspberry.
-- [ ] Heartbeat/frescura almacenados en Neon, estados OK/RETRASADO/SIN DATOS/ERROR.
-- [ ] Pruebas frente a caídas Hyperliquid y cierre de velas.
-- [ ] Revisar R01, R02, R04, R08, R09, R12, R14, R24.
+**Estado:** IMPLEMENTACIÓN REALIZADA, VALIDACIÓN PARCIAL · **Decisión:** NO-GO
+- [x] Código worker separado de FastAPI; en modo API cloud nunca arranca scheduler ni ejecuta DDL.
+- [x] Bloqueo de sesión PostgreSQL + diario de ciclo único de 300s, probado en CI con dos conexiones concurrentes y crash simulado.
+- [x] Golden V4 G1 sigue verde y test del engine real con market feed simulado y persistencia PostgreSQL.
+- [ ] Reinicio/redeploy real con estado V5 desde Railway Preview y prueba idempotente de efectos tras corte.
+- [x] Heartbeat/log en PostgreSQL y cálculo de estado stale comprobados en CI.
+- [ ] Fallos Hyperliquid reales, feed de velas y disponibilidad de Railway Preview.
+- [ ] Permisos runtime y credenciales Neon Preview inyectados en Railway, worker online.
+- [ ] Revisar/aceptar riesgos residuales R01, R02, R04, R08, R09, R12, R14, R17, R24 tras pruebas reales.
+- **Evidencia parcial:** [Acta F3](F3_EJECUCION_Y_HALLAZGOS.md) y workflow F3 GitHub Actions. **No marcar GO** sin Railway.
 
 ## G4 — API, seguridad y ventana de logs
 **Estado:** PENDIENTE · **Decisión:** NO-GO
@@ -99,6 +101,12 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - Dos ramas Neon separadas y vacías. Nunca se ha migrado histórico.
 - Pendiente para G3/G4: pool de conexiones, worker activo, credenciales de servicios y sesiones frontend.
 
+## Avance F3 — 2026-10-17
+- Implementación bajo flags y pruebas simuladas completadas en GitHub.
+- Migración Neon Preview `0002_worker` verificada; Production permanece en `0001_initial`, sin motor.
+- El plugin Railway figura instalado, pero las operaciones Railway **no están expuestas** en esta sesión. No hay desplegado.
+- **G3 NO-GO** hasta despliegue Preview y pruebas dinámicas del plan maestro.
+
 ## Registro de revisiones
 | Fecha | Gate | Cambio | Pruebas ejecutadas | Resultado |
 |---|---|---|---|---|
@@ -109,3 +117,5 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 | 2026-10-17 | G1 | Baseline Golden V4, fixtures sintéticos, lock CI y pruebas contratos/exits | 60/60 F1 + 12/12 F0 PASS (CI 39013937477) | GO · pasar a F2 |
 
 | 2026-10-17 | G2 | Neon vacía, esquema 0001, backend PostgreSQL opcional, bootstrap y roles restringidos | 93/93 PASS (CI 39015731740), backup/restore PASS, Neon Preview/Production verificado | GO · pasar a F3 |
+
+| 2026-10-17 | G3 | Worker Python aislado, lock PG, slots, heartbeat, pruebas de crash y F1 | CI F3 PASS; Railway Preview NOT RUN | NO-GO por validación cloud pendiente |
