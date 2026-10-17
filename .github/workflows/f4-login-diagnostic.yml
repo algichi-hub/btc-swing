@@ -20,3 +20,5 @@ jobs:
            https://btc-v5-api-preview-preview.up.railway.app/api/auth/login)"
           echo "Diagnostic request status: $result"
           test "$result" = '401' || test "$result" = '500'
+
+# Retry once after category-logging deploy
