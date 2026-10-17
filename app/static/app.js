@@ -2024,6 +2024,63 @@ function attachPasswordChange() {
   });
 }
 
+function attachRecoveryCodes() {
+  const form = byId('recovery-generate-form');
+  const remaining = byId('recovery-remaining');
+  const generated = byId('recovery-generated');
+  const output = byId('recovery-codes-output');
+  const message = byId('recovery-generate-feedback');
+  const button = byId('recovery-generate-button');
+  if (!form || !remaining || !generated || !output || !message || !button) return;
+  const clearDisplay = () => {
+    output.textContent = '';
+    generated.classList.add('hidden');
+  };
+  const refresh = async () => {
+    const r = await fetch('/api/auth/recovery-codes/status', { cache: 'no-store' });
+    if (r.ok) remaining.textContent = String((await r.json()).remaining);
+  };
+  void refresh().catch(() => { remaining.textContent = 'No disponible'; });
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    message.textContent = '';
+    clearDisplay();
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/auth/recovery-codes', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ current_password: byId('recovery-confirm-password').value }),
+      });
+      if (!response.ok) {
+        message.textContent = response.status === 400
+          ? 'La contraseña actual es incorrecta.'
+          : 'No se han podido generar códigos de recuperación.';
+        return;
+      }
+      const data = await response.json();
+      output.textContent = data.codes.join('\\n');
+      generated.classList.remove('hidden');
+      form.reset();
+      message.textContent = 'Nuevos códigos generados. Los anteriores han quedado invalidados.';
+      remaining.textContent = String(data.count);
+    } catch (_) {
+      message.textContent = 'Error de conexión.';
+    } finally {
+      button.disabled = false;
+    }
+  });
+  byId('recovery-copy-button').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(output.textContent);
+      message.textContent = 'Códigos copiados. Guárdalos en un lugar privado.';
+    } catch (_) { message.textContent = 'Selecciona y copia manualmente los códigos.'; }
+  });
+  byId('recovery-hide-button').addEventListener('click', clearDisplay);
+  window.addEventListener('pagehide', clearDisplay);
+}
+
 async function bootstrap() {
   const user = await checkAuth();
   if (!user) {
@@ -2036,6 +2093,7 @@ async function bootstrap() {
   attachNavigation();
   attachSettingsForm();
   attachPasswordChange();
+  attachRecoveryCodes();
   attachTelegramTestButton();
   attachDatabaseReset();
   attachTradeDiagnosticsToggle();
