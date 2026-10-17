@@ -77,3 +77,16 @@ El usuario autorizó progresar desde F3 con el riesgo de crash mid-cycle conocid
 - Smoke externo HTTPS [run 39064052683](https://github.com/algichi-hub/btc-swing/actions/runs/39064052683) PASS: /health, login y JS/UI nuevos 200, /api/auth/recovery-codes/status sin sesión 401, POST /api/auth/recover sin Origin 403.
 - **Pendiente de validación manual E2E**: generar y custodiar códigos mediante la propia cuenta del usuario, comprobar un uso y rechazo del reuso, rotación de contraseña y cierre de sesión. No se generan códigos en nombre del usuario para evitar que aparezcan en herramientas/logs de soporte.
 - La publicación del frontend nuevo en Vercel permanece pendiente por 403 del conector de Vercel (scope algichi-7752). Frontend actualizado disponible en dominio HTTPS de Railway Preview. Resend descartado para esta funcionalidad. **G4 continúa NO-GO** hasta E2E manual y revisión de proxy Vercel.
+
+## Verificación complementaria del cierre F4 — 17-10-2026
+
+Revisión efectuada mediante conectores GitHub, Railway y Vercel, sin modificar Production ni la Raspberry V4.
+
+- **Railway API Preview:** deployment `8b8ea282-fc7d-4702-b8eb-ed8e7e020a2c` SUCCESS, commit `955825407c6bbdf3cca51f88c91529a3bba32d53`. Registro de arranque Uvicorn y GET /health 200 (19:48 UTC). La API y el engine siguen desplegados como servicios independientes.
+- **Tráfico autenticado observado (Railway):** POST /api/auth/login 200; POST /api/auth/change-password 200; GET /api/auth/me 200; GET /api/dashboard 200; GET /ops 200; GET /api/ops/logs?page=1&page_size=25 200 y GET /api/ops/status 200. Constituyen evidencia de uso real del frontend servido en Railway, no de E2E a través de Vercel.
+- **Recuperación:** /login y recursos JS disponibles 200; GET /api/auth/recovery-codes/status sin sesión devuelve 401; POST /api/auth/recover sin Origin devuelve 403. No se ejecutó consumo real de un código, ni prueba E2E de reutilización, revocación y rotación por recuperación: **PENDIENTE**.
+- **Vercel:** proyecto `btc-swing-v5` accesible mediante listado; último deployment registrado `dpl_GAdwrbGUXG8o5XGvST2eSiZPzBM1` READY pero en commit `fb53043`, anterior a recuperación `9558254`. La consulta detallada devuelve **403 Not authorized under scope algichi-7752**. No hay evidencia para asegurar frontend de recuperación actualizado ni completar el proxy E2E Vercel → Railway.
+- **Seguridad E2E restante:** cookies desde Vercel, CSRF con sesión real por proxy, expiración/rotación, pruebas RBAC VIEWER, 429 real, fallos/caché privada y pruebas E2E de recuperación. Los tests CI existentes no sustituyen estas comprobaciones.
+- **Observabilidad:** LOG y estado mostraron 200 reales desde Railway, pero falta un ensayo dedicado de paginación/filtros/estado de error y frescura mediante el proxy Vercel.
+
+**Decisión formal G4: NO-GO**, hasta obtener autorización válida del scope Vercel, desplegar allí el frontend en el commit vigente, superar E2E y cerrar los riesgos y evidencia de gate. Esta revisión no habilita trading real ni implica aceptación automática del riesgo G3 residual.
