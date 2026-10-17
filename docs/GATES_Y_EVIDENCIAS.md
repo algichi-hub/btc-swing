@@ -28,12 +28,13 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - **Detalle y limitaciones:** [Acta F0](F0_EJECUCION_Y_HALLAZGOS.md). GO no significa equivalencia del algoritmo ni pruebas de servicios cloud.
 
 ## G1 — Baseline de algoritmo
-**Estado:** PENDIENTE · **Decisión:** NO-GO
-- [ ] Recuperar suite original o construir cobertura de comportamiento equivalente; registrar recuento ejecutado.
-- [ ] Congelar fixtures de OHLCV y resultados V4 para entradas/salidas, no-trade, SL/TP, sizing, PnL y casos límite.
-- [ ] Asegurar versionado Python y dependencias.
-- [ ] PASS paridad en casos críticos sin modificar reglas.
-- [ ] Revisar R01, R09, R11, R18.
+**Estado:** COMPLETADO · **Decisión:** GO (paridad sobre fixtures seleccionados)
+- [x] Suite V4 original ausente; sustituida por 60 tests nuevos documentados, 12 tests F0 conservados.
+- [x] Golden V4 de 34 vectores desde código original; covers OHLCV, señal, NO_TRADE, SL/TP, sizing, PnL, DST y casos límite.
+- [x] Lock Python 3.11/Ubuntu con 38 paquetes; CI verifica versiones, sintaxis y tests.
+- [x] PASS de los 34 vectores críticos seleccionados y 26 pruebas adicionales (integridad código, contratos, TP/SL), sin modificar algoritmo.
+- [x] Revisar R01, R09, R11, R18; mantener controles residuales G3/G6.
+- **Evidencia:** [acta F1](F1_EJECUCION_Y_HALLAZGOS.md) y [CI 39013937477](https://github.com/algichi-hub/btc-swing/actions/runs/39013937477), 72 tests total PASS.
 
 ## G2 — Neon PostgreSQL desde cero
 **Estado:** PENDIENTE · **Decisión:** NO-GO
@@ -87,9 +88,16 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - Limitaciones fuera de G0: suite algorítmica original ausente, engine live no probado, sin despliegues Railway/Neon/Vercel.
 - Riesgos R01/R06/R11/R15/R18 mantienen controles pendientes con gate asignado. G1–G6 continúan en NO-GO.
 
+## Cierre F1 — 2026-10-17
+- **G1 GO**: 60/60 tests F1 PASS + 12/12 F0 PASS, dependencias bloqueadas y comparador Golden Master.
+- No hay pruebas de feed/scheduler/persistencia reales: asignadas a G3/G6.
+- La suite original V4 no estaba en ZIP: referencia nueva con riesgos residuales documentados.
+
 ## Registro de revisiones
 | Fecha | Gate | Cambio | Pruebas ejecutadas | Resultado |
 |---|---|---|---|---|
 | 2026-10-17 | Planificación | Se crea checklist, Neon vacío, observabilidad frontend; no se ejecutan tests | Ninguna | Todos pendientes / NO-GO |
 
 | 2026-10-17 | G0 | Importación completa 56 archivos, smoke FastAPI y seguridad estática; límites aceptados | 12/12 PASS GitHub Actions 39012354521 | GO · pasar a F1 |
+
+| 2026-10-17 | G1 | Baseline Golden V4, fixtures sintéticos, lock CI y pruebas contratos/exits | 60/60 F1 + 12/12 F0 PASS (CI 39013937477) | GO · pasar a F2 |

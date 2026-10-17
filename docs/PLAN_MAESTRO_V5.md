@@ -1,6 +1,6 @@
 # Plan maestro de ejecución — BTC Swing Trade V5 Cloud
 
-**Versión:** 1.1 | **Fecha:** 2026-10-17 | **Estado:** F0/G0 COMPLETADOS; F1–F6 PENDIENTES  
+**Versión:** 1.2 | **Fecha:** 2026-10-17 | **Estado:** F0/G0 y F1/G1 COMPLETADOS; F2–F6 PENDIENTES  
 **Repositorio:** algichi-hub/btc-swing  
 **Documentos asociados:** [Auditoría y matriz de riesgos](AUDITORIA_V4_RIESGOS_V5.md) · [Actas y evidencias](GATES_Y_EVIDENCIAS.md)
 
@@ -192,11 +192,11 @@ Toda variación de algoritmos, versiones, intervalo, semántica de señales, est
 | Fase | Gate | Estado | Última evidencia | Decisión |
 |---|---|---|---|---|
 | F0 | G0 | Completada | Fuente V4 saneada en GitHub; 12 tests PASS, [CI run 39012354521](https://github.com/algichi-hub/btc-swing/actions/runs/39012354521) | **GO** |
-| F1 | G1 | Pendiente | No hay suite ejecutada | NO-GO |
+| F1 | G1 | Completada | 60 pruebas F1 + 12 F0 PASS; [acta F1](F1_EJECUCION_Y_HALLAZGOS.md), [CI run 39013937477](https://github.com/algichi-hub/btc-swing/actions/runs/39013937477) | **GO** |
 | F2 | G2 | Pendiente | Neon no inicializado | NO-GO |
 | F3 | G3 | Pendiente | Railway no desplegado | NO-GO |
 | F4 | G4 | Pendiente | UI/API no implementados en cloud | NO-GO |
 | F5 | G5 | Pendiente | PWA/Push no implementados | NO-GO |
 | F6 | G6 | Pendiente | Sin despliegue de producción | NO-GO |
 
-**Siguiente fase:** F1.01–F1.04 (golden master y paridad V4). G1 sigue NO-GO hasta que sus pruebas críticas estén ejecutadas.
+**Siguiente fase:** F2.01–F2.05 — esquema Neon vacío, repositorios PostgreSQL, transacciones y bootstrap seguro. G2 NO-GO hasta evidencias.

@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.11'
           cache: pip
-          cache-dependency-path: requirements-dev.txt
+          cache-dependency-path: requirements-f1.lock
       - name: Ensure V4 source is committed
         run: |
           test -f app/config.py
@@ -27,11 +27,17 @@ jobs:
           test -f requirements-dev.txt
           test -f tests/test_f0_baseline.py
       - name: Install dependencies
-        run: python -m pip install -r requirements-dev.txt
+        run: python -m pip install -r requirements-f1.lock
+      - name: Verify resolved dependency lock
+        run: |
+          python -m pip freeze > /tmp/resolved.txt
+          grep '==' requirements-f1.lock | sort -f > /tmp/expected.txt
+          sort -f /tmp/resolved.txt > /tmp/actual.txt
+          diff -u /tmp/expected.txt /tmp/actual.txt
       - name: Syntax compilation
         run: python -m compileall -q app tests
-      - name: Run F0 regression
-        run: python -m pytest -q tests/test_f0_baseline.py tests/test_f0_smoke.py
+      - name: Run F0 and F1 algorithm regression
+        run: python -m pytest -q tests/test_f0_baseline.py tests/test_f0_smoke.py tests/test_f1_golden.py tests/test_f1_contracts.py tests/test_f1_exits.py
       - name: Excluded file policy
         run: |
           python - <<'PY'
