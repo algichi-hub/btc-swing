@@ -1,7 +1,7 @@
 # F2 — Neon PostgreSQL desde cero · Acta y evidencias de G2
 
-**Fecha:** 2026-10-17 · **Fase:** F2.01–F2.05 · **Gate:** G2, GO sujeto a CI de la rama y validación de integración.  
-**Evidencia automatizada:** [GitHub Actions 39015613732](https://github.com/algichi-hub/btc-swing/actions/runs/39015613732) (última suite con roles).  
+**Fecha:** 2026-10-17 · **Fase:** F2.01–F2.05 · **Gate:** G2, **GO** (CI y verificación Neon completados).  
+**Evidencia automatizada:** [GitHub Actions 39015731740](https://github.com/algichi-hub/btc-swing/actions/runs/39015731740) (última suite con roles).  
 **Neon project ID:** `cool-sea-01964139` · **DB:** `btc_swing_v5` · PG 18 · AWS eu-central-1.  
 **Ramas Neon:** `production` (`br-rough-flower-bas9bc40`), `preview` (`br-old-heart-bawz12tt`).
 
@@ -45,11 +45,11 @@
 | T02-03 | UNIQUE parciales, FK, enums CHECK, índice username case-insensitive; tabla e índices comprobados |
 | T02-04 | Commit/rollback transaccional (excepción deliberada, fila no persistida) |
 | T02-05 | Insert-or-ignore/idempotencia por fingerprint y evento; dos hilos compitiendo por oportunidad activa: uno gana, otro rechazado |
-| T02-06 | Bootstrap ADMIN Argon2 con validación de longitud y rechazo de segunda alta |
+| T02-06 | Bootstrap ADMIN Argon2 con validación de longitud y rechazo de segunda alta; defaults V4 idempotentes en PostgreSQL |
 | T02-07 | TLS requerido remoto, roles estrictos y separaciones de permiso; no secretos versionados; flags PostgreSQL de activación controlados |
 | T02-08 | Backup `pg_dump` y restore `pg_restore` realizados en PostgreSQL descartable con verificaciones de filas recuperadas |
 
-**Pruebas:** 72 casos existentes F0/F1 + 7 unitarios PostgreSQL F2 + 13 integración F2 = **92 casos automáticos**; además backup/restore y verificaciones directas de Neon. Ver ejecución GitHub Actions enlazada al inicio de este acta.
+**Pruebas:** 72 casos existentes F0/F1 + 7 unitarios PostgreSQL F2 + 14 integración F2 = **93 casos automáticos**; además backup/restore y verificaciones directas de Neon. Ver ejecución GitHub Actions enlazada al inicio de este acta.
 
 ## Revisión de riesgos
 - **R05:** disminuye por pruebas de semántica Postgres, transacciones, claves, idempotencia; permanece residual para consultas menos frecuentes y API completa (G3/G4).
@@ -59,6 +59,6 @@
 - **R06:** incidente de roles Neon con privilegios elevados resuelto mediante creación SQL restringida; proteger futuras altas, credenciales y grants.
 
 ## Exit criteria y decisión
-**G2 GO**, condicionado exclusivamente al CI final satisfactorio de esta misma revisión y aceptación de riesgos residuales arriba descritos. El esquema y los repositorios están listos para F3; **no autoriza despliegue del worker ni operaciones de trading**.
+**G2 GO**: CI de la rama ejecutado correctamente y controles de ambos entornos Neon verificados. Los riesgos residuales están asignados a G3/G4. El esquema y los repositorios están listos para F3; **no autoriza despliegue del worker ni operaciones de trading**.
 
 **G3 comienza NO-GO**. Tareas siguientes: proceso Railway, motor único, lock/fencing, persistencia V5 tras reinicio, logs y heartbeat.
