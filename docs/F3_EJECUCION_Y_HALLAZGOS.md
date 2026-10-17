@@ -94,3 +94,10 @@ Se ha creado el proyecto Railway privado y el servicio worker Preview y se ha pr
 - No se han importado datos V4 ni ejecutado órdenes reales; `BTC_LIVE_TRADING=false`, `TELEGRAM_ENABLED=false`. Neon Production y Raspberry intactos.
 
 **Limitaciones / pendiente para G3 GO:** no consta prueba con dos workers durante la adquisición simultánea de un **slot nuevo**; no se ha inyectado fallo real 429/timeout de Hyperliquid, ni matado un ciclo durante una escritura para probar idempotencia de todos los efectos; no se ha probado la detección tardía de heartbeat tras parada real >660 s ni un soak prolongado. Estas pruebas no se confunden con los 117 tests offline de GitHub Actions. **G3 NO-GO**, aunque despliegue Preview y dos ciclos reales han pasado.
+
+## Revisión adicional — 2026-10-17 12:28 UTC
+- Railway Preview **SUCCESS**, escala temporal 2 réplicas y vuelta verificada a **1 réplica**, servicio estable.
+- Lectura SQL Neon Preview: **35 slots distintos, 35 OK, 0 ERROR, 0 slots con attempt >1, 35 snapshots, 35 eventos de completado, 0 señales, 0 Telegram**, entre los slots 09:35 y 12:25 UTC. Evidencia operacional, no mera simulación.
+- Último heartbeat 12:25:15 UTC; edad 163 s a las 12:27:58 UTC, estado OK. No existe evidencia de prueba de stale tras parada real >660 s.
+- Se mantienen pruebas bloqueantes de G3 aún NO ejecutadas en Railway: fault injection 429/timeout y recuperación, caída a mitad de escritura, comprobación de **nuevo slot** con dos réplicas compitiendo y stale >660 s. No inventar sus resultados.
+- **G3: NO-GO** hasta que existan esas evidencias. La fase tiene pruebas suficientes de continuidad normal, pero no de resiliencia adversarial real.
