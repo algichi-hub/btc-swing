@@ -153,3 +153,5 @@ Evidencias: [acta F3](F3_EJECUCION_Y_HALLAZGOS.md), tests PostgreSQL efímero y 
 
 ### Revisión operativa Railway Preview — 2026-10-17
 Dos ciclos completos sobre Neon Preview y reinicio sin reintentar slots `OK`. Escala temporal 2 réplicas confirmada y devuelta a 1. R02/R04/R08/R12/R17 mantienen riesgo residual por ausencia de inyección real de fallos, simultaneidad de slot nuevo y observación de stale >660 s. **G3 sigue NO-GO**. Evidencia y alcance en [F3 Railway Preview](F3_RAILWAY_PREVIEW_ESTADO.md).
+
+Revisión F3 2026-10-17: R02 conserva riesgo residual de SIGKILL dentro de Railway (SIGKILL probado en CI); R04 y R24 pasan prueba real de heartbeat RETRASADO a 677 s y recuperación; R08 pasa fallo real de red recuperado, 429 simulado CI. Ver [acta adversarial](F3_PRUEBAS_ADVERSARIALES_20261017.md). G3 NO-GO pendiente.

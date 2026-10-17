@@ -121,3 +121,8 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 | 2026-10-17 | G3 | Worker Python aislado, lock PG, slots, heartbeat, pruebas de crash y F1 | CI F3 PASS; Railway Preview ya desplegado; 2 ciclos OK, pruebas adversariales restantes NOT RUN | NO-GO por validación cloud pendiente |
 
 | 2026-10-17 | G3 Preview | Worker Railway desplegado SUCCESS, 2 ciclos de 300 s OK, heartbeat/snapshots y reinicio, escala temporal 2→1 | SQL Neon + Railway Preview; pendiente fault-injection real y nuevo slot concurrente | NO-GO parcial |
+
+## G3 — Pruebas adversariales (2026-10-17)
+- [Acta adversarial F3](F3_PRUEBAS_ADVERSARIALES_20261017.md): 9 tests nuevos PASS en GitHub Actions, incluidos SIGKILL real del proceso CI y replay PAPER/TP1 con PostgreSQL; 117 pruebas anteriores PASS.
+- Railway Preview: dos workers en slot 12:30 sin duplicados; red Hyperliquid fallida 12:35 recuperada en intento 3; suspensión real >660 s que mostró RETRASADO a los 677 s; restauración con slots 12:55 y 13:00 OK.
+- Corte mid-cycle dentro de Railway no ejecutado por bloqueo de herramienta; protección SIGKILL verificada en CI. **G3 NO-GO estricto** hasta prueba directa o aceptación formal de equivalencia.

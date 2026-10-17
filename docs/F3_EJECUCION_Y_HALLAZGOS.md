@@ -101,3 +101,7 @@ Se ha creado el proyecto Railway privado y el servicio worker Preview y se ha pr
 - Último heartbeat 12:25:15 UTC; edad 163 s a las 12:27:58 UTC, estado OK. No existe evidencia de prueba de stale tras parada real >660 s.
 - Se mantienen pruebas bloqueantes de G3 aún NO ejecutadas en Railway: fault injection 429/timeout y recuperación, caída a mitad de escritura, comprobación de **nuevo slot** con dos réplicas compitiendo y stale >660 s. No inventar sus resultados.
 - **G3: NO-GO** hasta que existan esas evidencias. La fase tiene pruebas suficientes de continuidad normal, pero no de resiliencia adversarial real.
+
+## Validación adversarial adicional — 2026-10-17 (ver acta vinculada)
+
+[Pruebas F3 adversariales y detalles de Railway Preview](F3_PRUEBAS_ADVERSARIALES_20261017.md): 9 nuevos tests CI PASS (429/timeout/JSON, SIGKILL real en proceso CI tras escritura PAPER, idempotencia TP1, límite stale). En Railway: dos réplicas ante slot nuevo 12:30 OK sin duplicado, error real Hyperliquid 12:35 recuperado en intento 3, worker detenido realmente >660 s con estado RETRASADO a los 677 s y recuperación 12:55/13:00 OK. Servicio restaurado a 1 réplica. Sigue pendiente **SIGKILL dentro de ciclo real Railway** (control herramienta bloqueó la maniobra, política de drenaje restaurada); no se confunde con el SIGKILL CI. **G3 NO-GO estricto** hasta validarlo o aceptar formalmente prueba equivalente en otro entorno.
