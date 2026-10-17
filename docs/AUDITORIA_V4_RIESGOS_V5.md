@@ -162,3 +162,6 @@ Revisión F3 2026-10-17: R02 conserva riesgo residual de SIGKILL dentro de Railw
 - **R20**: proxy mismo origen preparado con Vercel, sin comprobar Set-Cookie/Origin y redirecciones en sesión real.
 - **R02**: user autorizó progreso de F4 asumiendo riesgo residual G3, no se declara cerrado.
 Evidencia en [acta F4](F4_EJECUCION_Y_HALLAZGOS.md). Gate G4 NO-GO.
+
+### Auditoría transversal G0–G4 posterior al login Vercel — 2026-10-17
+Ver [acta de auditoría](AUDITORIA_G0_G4_Y_ENTRADA_F5_20261017.md). R10 reducido por login real Vercel→Railway→Neon confirmado por usuario; persisten comprobaciones de cookies, CSRF negativo y sesiones. R02 no resuelto (crash mid-write Railway sin prueba real). R06/R13/R17/R19/R22/R23 permanecen abiertos por tests E2E/latencia/redacción/caché no ejecutados. R04/R24 parcialmente mitigados por stale real en Railway, no verificado E2E en frontend. R07/R14/R20 reservados a F5. No se aceptan automáticamente riesgos altos/críticos. **G3 y G4 siguen NO-GO; F5 solo preparación.**
