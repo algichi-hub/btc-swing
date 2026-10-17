@@ -589,9 +589,15 @@ function showHourlyVolumeTooltip(target) {
   const usdText = target.dataset.usd || '—';
   const btcText = target.dataset.btc || '';
 
-  tooltip.innerHTML = btcText
-    ? `<strong>${timeText}</strong><span>${usdText}</span><span>${btcText} BTC</span>`
-    : `<strong>${timeText}</strong><span>${usdText}</span>`;
+  tooltip.replaceChildren();
+  const timeNode = document.createElement('strong');
+  timeNode.textContent = timeText;
+  tooltip.appendChild(timeNode);
+  for (const label of [usdText, ...(btcText ? [btcText + ' BTC'] : [])]) {
+    const node = document.createElement('span');
+    node.textContent = label;
+    tooltip.appendChild(node);
+  }
   tooltip.classList.remove('hidden');
 
   const plotRect = plot.getBoundingClientRect();
@@ -1033,12 +1039,22 @@ function showPnlTooltip(target, point) {
   const sign = pnlUsd > 0 ? '+' : '';
   const cumSign = cumPnlUsd > 0 ? '+' : '';
 
-  tooltip.innerHTML = `
-    <strong>${point.date} (UTC)</strong>
-    <span>PnL diario: <strong>${sign}${asMoneyPrecise(pnlUsd)}</strong></span>
-    <span>PnL acumulado: <strong>${cumSign}${asMoneyPrecise(cumPnlUsd)}</strong></span>
-    <span>Operaciones cerradas: <strong>${count}</strong></span>
-  `;
+  tooltip.replaceChildren();
+  const dateNode = document.createElement('strong');
+  dateNode.textContent = String(point.date ?? '') + ' (UTC)';
+  tooltip.appendChild(dateNode);
+  for (const [label, value] of [
+    ['PnL diario: ', sign + asMoneyPrecise(pnlUsd)],
+    ['PnL acumulado: ', cumSign + asMoneyPrecise(cumPnlUsd)],
+    ['Operaciones cerradas: ', String(count)],
+  ]) {
+    const span = document.createElement('span');
+    span.textContent = label;
+    const strong = document.createElement('strong');
+    strong.textContent = value;
+    span.appendChild(strong);
+    tooltip.appendChild(span);
+  }
   tooltip.classList.remove('hidden');
 
   const plotRect = plot.getBoundingClientRect();
