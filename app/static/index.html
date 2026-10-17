@@ -342,7 +342,23 @@
             <button id="password-change-submit" type="submit" class="save-button">Cambiar contraseña</button>
             <p id="password-change-feedback" class="form-feedback" aria-live="polite"></p>
           </form>
-          <p class="maintenance-description">Recuperación por correo con Resend: pendiente de configurar remitente verificado y dirección de recuperación.</p>
+          <section class="recovery-security" aria-labelledby="recovery-security-title">
+            <h4 id="recovery-security-title">Códigos de recuperación de un solo uso</h4>
+            <p class="maintenance-description">Genera 10 códigos para recuperar tu contraseña sin correo. Guarda los códigos en un lugar seguro: solo se mostrarán una vez y al regenerarlos se invalidarán todos los anteriores.</p>
+            <p>Códigos disponibles: <strong id="recovery-remaining">—</strong></p>
+            <form id="recovery-generate-form" autocomplete="off">
+              <div class="form-field"><label for="recovery-confirm-password">Confirma tu contraseña actual</label>
+                <input id="recovery-confirm-password" type="password" autocomplete="current-password" required maxlength="256" /></div>
+              <button class="save-button" type="submit" id="recovery-generate-button">Generar códigos</button>
+              <p class="form-feedback" id="recovery-generate-feedback" aria-live="polite"></p>
+            </form>
+            <div id="recovery-generated" class="hidden" aria-live="polite">
+              <p><strong>Copia los códigos ahora.</strong> No podrás volver a verlos después de salir de esta sección.</p>
+              <pre id="recovery-codes-output"></pre>
+              <button type="button" id="recovery-copy-button" class="save-button">Copiar códigos</button>
+              <button type="button" id="recovery-hide-button" class="cancel-button">Ya los he guardado</button>
+            </div>
+          </section>
         </section>
 
         <!-- Sección de Mantenimiento / Reset al final de Ajustes debajo de Telegram -->
