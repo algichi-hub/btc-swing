@@ -2060,7 +2060,7 @@ function attachRecoveryCodes() {
         return;
       }
       const data = await response.json();
-      output.textContent = data.codes.join('\\n');
+      output.textContent = data.codes.join('\n');
       generated.classList.remove('hidden');
       form.reset();
       message.textContent = 'Nuevos códigos generados. Los anteriores han quedado invalidados.';
