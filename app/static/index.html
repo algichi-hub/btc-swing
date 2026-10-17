@@ -329,6 +329,22 @@
           <p id="telegram-feedback" class="form-feedback" aria-live="polite"></p>
         </section>
 
+        <section class="password-security" aria-labelledby="password-security-title">
+          <h3 id="password-security-title">SEGURIDAD DE LA CUENTA</h3>
+          <p class="maintenance-description">Cambia tu contraseña. Al guardarla, se cerrarán todas las sesiones y tendrás que iniciar sesión de nuevo.</p>
+          <form id="password-change-form" autocomplete="off">
+            <div class="form-field"><label for="password-current">Contraseña actual</label>
+              <input id="password-current" type="password" autocomplete="current-password" required maxlength="256" /></div>
+            <div class="form-field"><label for="password-new">Nueva contraseña</label>
+              <input id="password-new" type="password" autocomplete="new-password" required minlength="16" maxlength="256" /></div>
+            <div class="form-field"><label for="password-confirm">Confirmar nueva contraseña</label>
+              <input id="password-confirm" type="password" autocomplete="new-password" required minlength="16" maxlength="256" /></div>
+            <button id="password-change-submit" type="submit" class="save-button">Cambiar contraseña</button>
+            <p id="password-change-feedback" class="form-feedback" aria-live="polite"></p>
+          </form>
+          <p class="maintenance-description">Recuperación por correo con Resend: pendiente de configurar remitente verificado y dirección de recuperación.</p>
+        </section>
+
         <!-- Sección de Mantenimiento / Reset al final de Ajustes debajo de Telegram -->
         <section class="database-maintenance" aria-labelledby="database-maintenance-title">
           <h3 id="database-maintenance-title">BASE DE DATOS</h3>
