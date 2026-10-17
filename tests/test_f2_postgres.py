@@ -185,3 +185,17 @@ def test_f2_least_privilege_roles():
         assert not conn.execute("SELECT has_table_privilege('btc_v5_web_app','trade_signals','INSERT') AS allowed").fetchone()['allowed']
         assert not conn.execute("SELECT has_table_privilege('btc_v5_engine_app','auth_sessions','INSERT') AS allowed").fetchone()['allowed']
         assert conn.execute("SELECT has_table_privilege('btc_v5_web_app','auth_sessions','INSERT') AS allowed").fetchone()['allowed']
+
+
+def test_f2_settings_defaults_seed_and_idempotence():
+    from pathlib import Path
+    from app.settings.service import SettingsService
+    from app.storage.postgres import connect_pg
+    service = SettingsService(Path('unused-on-postgres.db'), 120, 730)
+    service.apply_defaults()
+    service.apply_defaults()
+    settings = service.get_all()
+    assert settings['volume_confirmation_threshold'] == 1.05
+    assert settings['daily_swing_candles'] == 120
+    with connect_pg() as conn:
+        assert conn.execute('SELECT count(*) AS n FROM app_settings').fetchone()['n'] == len(settings)
