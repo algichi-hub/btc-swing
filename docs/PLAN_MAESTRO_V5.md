@@ -1,6 +1,6 @@
 # Plan maestro de ejecución — BTC Swing Trade V5 Cloud
 
-**Versión:** 1.0 | **Fecha:** 2026-10-17 | **Estado:** BASELINE DE PLANIFICACIÓN, sin gates aprobados  
+**Versión:** 1.1 | **Fecha:** 2026-10-17 | **Estado:** F0/G0 COMPLETADOS; F1–F6 PENDIENTES  
 **Repositorio:** algichi-hub/btc-swing  
 **Documentos asociados:** [Auditoría y matriz de riesgos](AUDITORIA_V4_RIESGOS_V5.md) · [Actas y evidencias](GATES_Y_EVIDENCIAS.md)
 
@@ -191,7 +191,7 @@ Toda variación de algoritmos, versiones, intervalo, semántica de señales, est
 
 | Fase | Gate | Estado | Última evidencia | Decisión |
 |---|---|---|---|---|
-| F0 | G0 | Pendiente | Documentación inicial; código aún no incorporado en GitHub | NO-GO |
+| F0 | G0 | Completada | Fuente V4 saneada en GitHub; 12 tests PASS, [CI run 39012354521](https://github.com/algichi-hub/btc-swing/actions/runs/39012354521) | **GO** |
 | F1 | G1 | Pendiente | No hay suite ejecutada | NO-GO |
 | F2 | G2 | Pendiente | Neon no inicializado | NO-GO |
 | F3 | G3 | Pendiente | Railway no desplegado | NO-GO |
@@ -199,4 +199,4 @@ Toda variación de algoritmos, versiones, intervalo, semántica de señales, est
 | F5 | G5 | Pendiente | PWA/Push no implementados | NO-GO |
 | F6 | G6 | Pendiente | Sin despliegue de producción | NO-GO |
 
-**Siguiente acción planificada:** F0.01—F0.04; no asumir GO de G0 sin tests.
+**Siguiente fase:** F1.01–F1.04 (golden master y paridad V4). G1 sigue NO-GO hasta que sus pruebas críticas estén ejecutadas.

@@ -1,0 +1,18 @@
+[Unit]
+Description=BTC Swing Trade
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__APP_USER__
+Group=__APP_GROUP__
+WorkingDirectory=/opt/btc_swing_trade
+EnvironmentFile=/opt/btc_swing_trade/.env
+Environment=UVICORN_WORKERS=1
+ExecStart=/opt/btc_swing_trade/scripts/run_linux.sh
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

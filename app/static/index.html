@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BTC Swing Trade</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <span class="eyebrow">BTC · SWING ENGINE</span>
+        <h1>BTC Swing Trade</h1>
+      </div>
+      <div class="status-stack">
+        <div id="auth-bar" class="auth-bar hidden">
+          <span id="auth-user" class="pill"></span>
+          <button id="logout-btn" type="button" class="btn-logout">Cerrar sesión</button>
+        </div>
+        <span id="status" class="pill">Cargando…</span>
+        <span id="updated-at" class="meta">Esperando datos…</span>
+      </div>
+    </header>
+
+    <section id="view-home" class="view">
+      <!-- 1. Precio actual / Volumen / Stoch RSI -->
+      <section class="hero">
+        <div>
+          <span class="label">BTC</span>
+          <strong id="price">—</strong>
+        </div>
+
+        <section class="hourly-volume-card" aria-label="Volumen horario de las últimas 24 horas">
+          <div class="hourly-volume-head">
+            <p class="hourly-volume-title">VOLUMEN 1H · ÚLTIMAS 24H</p>
+            <span id="hourly-volume-max" class="hourly-volume-max">MAX —</span>
+          </div>
+
+          <div class="hourly-volume-chart">
+            <div id="hourly-volume-plot" class="hourly-volume-plot">
+              <div id="hourly-volume-bars" class="hourly-volume-bars" role="img" aria-label="Histograma de volumen horario USD en 24 velas cerradas"></div>
+              <div id="hourly-volume-tooltip" class="hourly-volume-tooltip hidden" role="tooltip"></div>
+            </div>
+          </div>
+        </section>
+
+        <div class="kpis">
+          <article>
+            <span>STOCH RSI 1H</span>
+            <strong id="stoch">—</strong>
+            <small id="stoch-state" class="kpi-sub">—</small>
+          </article>
+        </div>
+      </section>
+
+      <!-- 2. Posición en rango diario activo -->
+      <article class="panel card range-card">
+        <div class="card-head">
+          <h2>POSICION EN RANGO DIARIO ACTIVO</h2>
+        </div>
+
+        <div class="range-track-wrap">
+          <div class="range-track" aria-hidden="true">
+            <span id="range-marker" class="range-marker"></span>
+          </div>
+          <div class="range-labels">
+            <span id="range-label-left">—</span>
+            <span id="range-label-right">—</span>
+          </div>
+        </div>
+
+        <p id="range-candles-used" class="diag">Velas diarias usadas: —</p>
+      </article>
+
+      <!-- 3. Señal actual -->
+      <article class="panel card signal-card">
+        <div class="card-head">
+          <h2>SENAL ACTUAL</h2>
+          <span id="signal-state" class="chip chip-neutral">NO TRADE</span>
+        </div>
+
+        <div id="signal-direction" class="signal-direction signal-direction-neutral" aria-live="polite">
+          <span id="signal-direction-arrow" class="signal-direction-arrow" aria-hidden="true">—</span>
+          <span class="signal-direction-caption">Direccion</span>
+          <strong id="signal-direction-label" class="signal-direction-label">Neutral</strong>
+        </div>
+
+        <ol id="signal-stepper" class="signal-stepper" aria-label="Escala de estado de senal">
+          <li class="signal-step signal-step-active" data-step="1" data-state="NO_TRADE">NO TRADE</li>
+          <li class="signal-step" data-step="2" data-state="WATCH">ESPERA</li>
+          <li class="signal-step" data-step="3" data-state="HIGH">CONFIRMADO</li>
+          <li class="signal-step" data-step="4" data-state="VERY_HIGH">ACTIVO</li>
+        </ol>
+
+        <p id="signal-summary" class="signal-summary">El precio esta fuera de una zona operable.</p>
+
+        <div class="signal-grid">
+          <article id="signal-rr-row" class="hidden"><span>RR potencial</span><strong id="signal-rr">—</strong></article>
+        </div>
+      </article>
+
+      <!-- 4. Plan de trade actual -->
+      <article id="trade-plan" class="panel card trade-plan-card hidden" aria-live="polite">
+        <div class="card-head">
+          <h2>Plan de trade actual</h2>
+          <span id="plan-type-badge" class="chip chip-neutral hidden">PLAN OPERATIVO</span>
+        </div>
+        <div class="plan-grid">
+          <article><span>Side</span><strong id="plan-side">—</strong></article>
+          <article><span>Entry Ref</span><strong id="plan-entry">—</strong></article>
+          <article><span>SL</span><strong id="plan-sl">—</strong></article>
+          <article><span>TP1 30%</span><strong id="plan-tp1">—</strong></article>
+          <article><span>TP2 30%</span><strong id="plan-tp2">—</strong></article>
+          <article><span>TP3 40%</span><strong id="plan-tp3">—</strong></article>
+          <article><span>RR1</span><strong id="plan-rr1">—</strong></article>
+          <article><span>RR2</span><strong id="plan-rr2">—</strong></article>
+          <article><span>RR3</span><strong id="plan-rr3">—</strong></article>
+          <article><span>RR ponderado</span><strong id="plan-rrw">—</strong></article>
+          <article><span>Margin</span><strong id="plan-margin">—</strong></article>
+          <article><span>Leverage</span><strong id="plan-leverage">—</strong></article>
+          <article><span>Notional</span><strong id="plan-notional">—</strong></article>
+          <article><span>Expected R</span><strong id="plan-expected-r">—</strong></article>
+        </div>
+      </article>
+
+      <!-- 5. Diagnóstico del trade -->
+      <article class="panel card trade-diagnostics-card">
+        <button id="trade-diagnostics-toggle" class="trade-diagnostics-toggle" type="button" aria-expanded="false" aria-controls="trade-diagnostics-content">
+          <span>DIAGNOSTICO DEL TRADE</span>
+          <span id="trade-diagnostics-chevron" class="trade-diagnostics-chevron" aria-hidden="true">▼</span>
+        </button>
+
+        <div id="trade-diagnostics-content" class="trade-diagnostics-body hidden">
+          <div class="trade-diagnostics-grid">
+            <article>
+              <p class="trade-diagnostics-label">RESISTENCIA ACTIVA</p>
+              <p class="trade-diagnostics-detail"><span>Centro:</span><strong id="diag-resistance-center">—</strong></p>
+              <p class="trade-diagnostics-detail"><span>CONFIRMACIONES:</span><strong id="diag-resistance-score">—</strong></p>
+              <p class="trade-diagnostics-pivots-title">Pivotes:</p>
+              <ul id="diag-resistance-pivots" class="trade-diagnostics-pivots">
+                <li>ninguno</li>
+              </ul>
+            </article>
+
+            <article>
+              <p class="trade-diagnostics-label">SOPORTE ACTIVO</p>
+              <p class="trade-diagnostics-detail"><span>Centro:</span><strong id="diag-support-center">—</strong></p>
+              <p class="trade-diagnostics-detail"><span>CONFIRMACIONES:</span><strong id="diag-support-score">—</strong></p>
+              <p class="trade-diagnostics-pivots-title">Pivotes:</p>
+              <ul id="diag-support-pivots" class="trade-diagnostics-pivots">
+                <li>ninguno</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section id="view-history" class="view hidden">
+      <!-- Gráfica lineal de PnL acumulado diario -->
+      <article class="panel card pnl-chart-card">
+        <div class="card-head">
+          <h2>PnL acumulado</h2>
+          <span id="pnl-chart-summary" class="chip chip-neutral">—</span>
+        </div>
+
+        <div class="pnl-chart-wrap">
+          <div id="pnl-chart-plot" class="pnl-chart-plot">
+            <svg id="pnl-chart-svg" class="pnl-chart-svg" aria-label="Gráfica de PnL acumulado diario"></svg>
+            <div id="pnl-chart-tooltip" class="pnl-chart-tooltip hidden" role="tooltip"></div>
+          </div>
+          <p id="pnl-chart-empty" class="signal-reason hidden">No hay datos de PnL todavía.</p>
+        </div>
+      </article>
+
+      <!-- Lista de histórico -->
+      <article class="panel card history-card">
+        <div class="card-head">
+          <h2>HISTORICO</h2>
+          <span id="history-count" class="chip chip-neutral">0 operaciones</span>
+        </div>
+
+        <p id="history-feedback" class="signal-reason hidden" aria-live="polite"></p>
+        <p id="history-empty" class="signal-reason hidden">No hay operaciones cerradas todavía.</p>
+        <div id="history-list" class="history-list"></div>
+      </article>
+    </section>
+
+    <section id="view-settings" class="view hidden">
+      <article class="panel card settings-card">
+        <div class="card-head">
+          <h2>AJUSTES DEL MOTOR</h2>
+        </div>
+
+        <form id="settings-form" class="settings-form" novalidate>
+          <div class="form-field">
+            <label for="backtest-candles">Velas diarias cerradas — Backtest</label>
+            <input id="backtest-candles" name="backtest_candles" type="number" min="120" max="5000" step="1" required />
+            <p class="field-help">Número de velas diarias cerradas utilizadas por el motor histórico para backtesting, estadísticas de setups, expectancy y clasificación de estados.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="lookback-days">Ventana estructural diaria</label>
+            <input id="lookback-days" name="lookback_days" type="number" min="1" max="5000" step="1" required />
+            <p class="field-help">Número de sesiones diarias cerradas utilizadas para detectar pivotes y calcular soportes, resistencias y el rango swing actual. La SMA20 utiliza adicionalmente las sesiones previas necesarias como warm-up.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="pivot-left">Pivot izquierda</label>
+            <input id="pivot-left" name="pivot_left" type="number" min="1" max="20" step="1" required />
+            <p class="field-help">Cantidad de velas a la izquierda usadas para confirmar un pivote.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="pivot-right">Pivot derecha</label>
+            <input id="pivot-right" name="pivot_right" type="number" min="1" max="20" step="1" required />
+            <p class="field-help">Cantidad de velas a la derecha usadas para confirmar un pivote.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="min-confirmations">Confirmaciones mínimas</label>
+            <input id="min-confirmations" name="min_confirmations" type="number" min="1" max="20" step="1" required />
+            <p class="field-help">Confirmaciones mínimas requeridas para considerar válido un nivel estructural.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="cluster-tolerance-pct">Tolerancia cluster (%)</label>
+            <input id="cluster-tolerance-pct" name="cluster_tolerance_pct" type="number" min="0" max="100" step="0.1" required />
+            <p class="field-help">Desviación porcentual máxima permitida al agrupar pivotes en un cluster.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="sma20-filter-pct">Filtro SMA20 (%)</label>
+            <input id="sma20-filter-pct" name="sma20_filter_pct" type="number" min="0" max="100" step="0.1" required />
+            <p class="field-help">Distancia porcentual máxima permitida respecto a SMA20 en la fecha del pivote.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="operational-range-pct">Distancia máxima a niveles (%)</label>
+            <input id="operational-range-pct" name="operational_range_pct" type="number" min="0" max="100" step="0.1" required />
+            <p class="field-help">Máxima distancia porcentual respecto al precio actual a la que un soporte o resistencia puede considerarse operativo.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="min-operational-range-pct">Amplitud mínima del rango (%)</label>
+            <input id="min-operational-range-pct" name="min_operational_range_pct" type="number" min="0" max="100" step="0.1" required />
+            <p class="field-help">Anchura porcentual mínima requerida entre soporte y resistencia para considerar el rango apto para una operación swing.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="pnl-chart-days">Ventana gráfica PnL acumulado</label>
+            <select id="pnl-chart-days" name="pnl_chart_days" class="settings-select">
+              <option value="7">7 días</option>
+              <option value="30">30 días</option>
+              <option value="90">90 días</option>
+            </select>
+            <p class="field-help">Ventana de tiempo para la visualización de la gráfica lineal de PnL acumulado.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="volume-baseline-period">Ventana de referencia de volumen (h)</label>
+            <input id="volume-baseline-period" name="volume_baseline_period" type="number" min="5" max="168" step="1" required />
+            <p class="field-help">Número de velas 1H cerradas anteriores utilizadas para calcular la mediana de volumen de referencia.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="volume-confirmation-threshold">Umbral de volumen relativo (x)</label>
+            <input id="volume-confirmation-threshold" name="volume_confirmation_threshold" type="number" min="0.50" max="5.00" step="0.01" required />
+            <p class="field-help">Multiplicador mínimo sobre la mediana de volumen horario requerido para confirmar el trade en la vela 1H (1.05 = +5%).</p>
+          </div>
+
+          <div class="form-field">
+            <label for="pnl-recap-weekday">Recap semanal de PnL — Día</label>
+            <select id="pnl-recap-weekday" name="pnl_recap_weekday" class="settings-select">
+              <option value="MONDAY">Lunes</option>
+              <option value="TUESDAY">Martes</option>
+              <option value="WEDNESDAY">Miércoles</option>
+              <option value="THURSDAY">Jueves</option>
+              <option value="FRIDAY">Viernes</option>
+              <option value="SATURDAY">Sábado</option>
+              <option value="SUNDAY">Domingo</option>
+            </select>
+            <p class="field-help">Día de la semana programado para el envío del resumen semanal de PnL por Telegram.</p>
+          </div>
+
+          <div class="form-field">
+            <label for="pnl-recap-time">Recap semanal de PnL — Hora</label>
+            <input id="pnl-recap-time" name="pnl_recap_time" type="time" required value="05:00" />
+            <p class="field-help">Hora local programada para el envío del resumen semanal de PnL (formato 24 horas HH:MM).</p>
+          </div>
+
+          <button id="save-settings" class="save-button" type="submit">Guardar ajustes</button>
+          <p id="settings-feedback" class="form-feedback" aria-live="polite"></p>
+        </form>
+
+        <section class="automation-diagnostics" aria-labelledby="automation-diagnostics-title">
+          <h3 id="automation-diagnostics-title">MOTOR DE ANÁLISIS</h3>
+
+          <div class="automation-meta-row">
+            <span>Estado:</span>
+            <span id="automation-status-badge" class="automation-status-badge automation-status-neutral">
+              <span class="automation-status-dot" aria-hidden="true">●</span>
+              <span id="automation-status-text">Cargando...</span>
+            </span>
+          </div>
+
+          <p class="automation-detail">Intervalo: <strong id="automation-interval">—</strong></p>
+          <p class="automation-detail">Último análisis: <strong id="automation-last-cycle">—</strong></p>
+          <p class="automation-detail">Próximo análisis: <strong id="automation-next-cycle">—</strong></p>
+          <p id="automation-stale-warning" class="form-feedback feedback-error hidden">⚠ Motor sin actualizar</p>
+        </section>
+
+        <section class="telegram-diagnostics" aria-labelledby="telegram-diagnostics-title">
+          <h3 id="telegram-diagnostics-title">TELEGRAM</h3>
+
+          <div class="telegram-meta-row">
+            <span>Estado:</span>
+            <span id="telegram-status-badge" class="telegram-status-badge telegram-status-neutral">
+              <span class="telegram-status-dot" aria-hidden="true">●</span>
+              <span id="telegram-status-text">Cargando...</span>
+            </span>
+          </div>
+
+          <p class="telegram-last-test">Última prueba: <strong id="telegram-last-test">—</strong></p>
+
+          <button id="telegram-test-button" class="save-button" type="button">ENVIAR MENSAJE DE PRUEBA</button>
+          <p id="telegram-feedback" class="form-feedback" aria-live="polite"></p>
+        </section>
+
+        <!-- Sección de Mantenimiento / Reset al final de Ajustes debajo de Telegram -->
+        <section class="database-maintenance" aria-labelledby="database-maintenance-title">
+          <h3 id="database-maintenance-title">BASE DE DATOS</h3>
+          <p class="maintenance-description">Mantenimiento y reset de datos operativos e históricos.</p>
+          <button id="database-reset-button" class="danger-button" type="button">Resetear base de datos</button>
+          <p id="database-reset-feedback" class="form-feedback" aria-live="polite"></p>
+        </section>
+      </article>
+    </section>
+  </main>
+
+  <!-- Modal de confirmación explícita para Reset de Base de Datos -->
+  <div id="reset-confirm-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="reset-modal-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-content">
+      <h3 id="reset-modal-title">Confirmar reset de base de datos</h3>
+      <p class="modal-warning">Esta acción es irreversible y realizará lo siguiente:</p>
+      <ul class="modal-list">
+        <li>Se borrará el histórico operativo completo.</li>
+        <li>Se eliminarán trades OPEN y CLOSED.</li>
+        <li>Se eliminarán eventos, snapshots y referencias runtime.</li>
+        <li>El Histórico quedará vacío.</li>
+        <li>La gráfica de PnL acumulado comenzará de nuevo.</li>
+        <li>Los <strong>Ajustes persistentes se conservarán</strong> intactos.</li>
+      </ul>
+      <div class="modal-actions">
+        <button id="reset-modal-cancel" class="cancel-button" type="button">Cancelar</button>
+        <button id="reset-modal-confirm" class="danger-button" type="button">Resetear base de datos</button>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Navegación principal">
+    <button id="tab-home" class="nav-item active" data-view="home" type="button" aria-label="Home">
+      <span class="nav-icon">⌂</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button id="tab-history" class="nav-item" data-view="history" type="button" aria-label="Histórico">
+      <span class="nav-icon">↺</span>
+      <span class="nav-label">Histórico</span>
+    </button>
+    <button id="tab-settings" class="nav-item" data-view="settings" type="button" aria-label="Ajustes">
+      <span class="nav-icon">⚙︎</span>
+      <span class="nav-label">Ajustes</span>
+    </button>
+  </nav>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

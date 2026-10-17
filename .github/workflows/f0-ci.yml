@@ -1,0 +1,46 @@
+name: V5 F0 baseline and security
+on:
+  push:
+    branches: [main, 'develop/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  f0:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Ensure V4 source is committed
+        run: |
+          test -f app/config.py
+          test -f app/main.py
+          test -f requirements-dev.txt
+          test -f tests/test_f0_baseline.py
+      - name: Install dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Syntax compilation
+        run: python -m compileall -q app tests
+      - name: Run F0 regression
+        run: python -m pytest -q tests/test_f0_baseline.py tests/test_f0_smoke.py
+      - name: Excluded file policy
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess
+          files=subprocess.check_output(['git','ls-files'],text=True).splitlines()
+          forbidden=[p for p in files if
+                     p.endswith(('.db','.db-wal','.db-shm','.sqlite','.sqlite3','.pem','.p12','.pfx','.pyc'))
+                     or p.startswith('data/') and p != 'data/.gitkeep'
+                     or p.startswith('.env') and p != '.env.example']
+          assert not forbidden, f'Forbidden tracked paths: {forbidden}'
+          PY
