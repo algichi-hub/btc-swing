@@ -138,3 +138,10 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - G3 **NO-GO estricto**: ensayo SIGKILL mid-write dentro de Railway pendiente o aceptación formal explícita de equivalencia CI+Railway.
 - G4 **NO-GO estricto**: login ADMIN Vercel validado por usuario tras corrección de Origin y despliegue API SHA `caaebf1` SUCCESS, pero T04-02..10 tienen pruebas parciales/NOT RUN. CI del último SHA no acreditada por status combinado vacío.
 - F5: **preparación de diseño admisible**, gate de entrada bloqueado hasta G3/G4 GO con evidencias.
+
+## Remediación NO-GO R06/R10/R19 — 17-10-2026
+- Vercel Preview `dpl_GsoHXTsL5pu6vZ1qfVwL1SbvjXZ9` READY, commit `4e3aaff`; CSP y `Cache-Control: private, no-store, max-age=0` para páginas privadas; API no-store existente. Validación runtime de cabeceras **NOT RUN** por protección de acceso/red externa.
+- Tests estáticos añadidos `tests/test_f4_security_headers.py`; workflow GitHub Actions `v5-f4-security-smoke.yml` añadido en commit `a643bac`: pretende validar /health 200, endpoints privados 401, Origin ausente o falso 403, y CSP/cache/sinks. Consulta GitHub de runs de dicho SHA: lista vacía; **no atribuir PASS**.
+- Login Vercel→Railway confirmado por usuario y status HTTP 200, `/api/auth/me` 200 en Railway: R10 mitigado parcialmente. Pruebas de cookie en navegador, logout, VIEWER/RBAC, caducidad, CSRF con sesión, 429 con cuenta de prueba: **NOT RUN**.
+- R19: defensa web desplegada pero Service Worker F5 inexistente y prueba real de cache/CSP pendiente; **ABIERTO**.
+- **Decisión sin cambios:** G3 NO-GO (SIGKILL mid-write Railway), G4 NO-GO (E2E críticos pendientes). R06/R10/R19 no cerrados; no publicar GO ficticio. No se modificó Production ni Raspberry.
