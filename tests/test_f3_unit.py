@@ -43,3 +43,23 @@ def test_deployment_uses_worker_command():
     dockerfile=(Path(__file__).resolve().parents[1]/'deploy/railway-worker.Dockerfile').read_text()
     assert 'app.automation.cloud_worker' in dockerfile
     assert 'python:3.11' in dockerfile
+
+
+def test_f3_cloud_api_lifespan_never_starts_worker(monkeypatch):
+    import app.main as main
+    from fastapi.testclient import TestClient
+    from unittest.mock import Mock
+    monkeypatch.setenv('BTC_PROCESS_ROLE','api')
+    monkeypatch.setenv('BTC_DB_BACKEND','postgres')
+    initialize=Mock(side_effect=AssertionError('DDL in API'))
+    scheduler=Mock(side_effect=AssertionError('Scheduler in API'))
+    recovery=Mock(side_effect=AssertionError('Market API in API'))
+    monkeypatch.setattr(main,'initialize',initialize)
+    monkeypatch.setattr(main.automation_scheduler,'start',scheduler)
+    monkeypatch.setattr(main,'recover_downtime_opportunity',recovery)
+    monkeypatch.setattr(main.automation_engine,'bootstrap',recovery)
+    with TestClient(main.create_app()) as client:
+        assert client.get('/health').status_code==200
+    initialize.assert_not_called()
+    scheduler.assert_not_called()
+    recovery.assert_not_called()
