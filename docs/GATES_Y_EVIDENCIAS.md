@@ -1,5 +1,7 @@
 # Gates de V5 — checklist y evidencias
 
+**Referencia vinculante:** [PLAN_MAESTRO_V5.md](PLAN_MAESTRO_V5.md) establece fases F0–F6, subfases F#.##, gates G0–G6, entry/exit criteria y catálogo de pruebas T##-##. Este archivo registra la ejecución y evidencias reales; no sustituye el plan.
+
 **Política:** todos los gates comienzan **PENDIENTE / NO-GO**. Ningún gate se aprueba automáticamente. En cada gate actualizar este archivo y `AUDITORIA_V4_RIESGOS_V5.md` con pruebas ejecutadas, evidencias y riesgo residual.
 
 ## Formato de acta obligatorio
