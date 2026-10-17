@@ -122,7 +122,7 @@ class Settings:
     auth_allowed_origins: tuple[str, ...] = _tuple_str(
         "AUTH_ALLOWED_ORIGINS",
         ("http://127.0.0.1:8008", "http://localhost:8008", "http://testserver"),
-    )
+    ) + _tuple_str("AUTH_EXTRA_ALLOWED_ORIGINS", ())
     auth_allowed_hosts: tuple[str, ...] = _tuple_str(
         "AUTH_ALLOWED_HOSTS",
         ("localhost", "127.0.0.1", "testserver"),
