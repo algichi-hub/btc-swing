@@ -726,10 +726,29 @@ def create_app(app_env: str | None = None) -> FastAPI:
             response = await call_next(request)
         except Exception as exc:
             # Avoid logging request bodies, credentials, SQL parameters or connection URIs.
+            error_description = str(exc).lower()
+            if "password authentication failed" in error_description:
+                connection_category = "db_password_rejected"
+            elif "could not translate host" in error_description or "name or service not known" in error_description:
+                connection_category = "db_host_dns"
+            elif "connection refused" in error_description:
+                connection_category = "db_connection_refused"
+            elif "timeout expired" in error_description or "timed out" in error_description:
+                connection_category = "db_timeout"
+            elif "ssl" in error_description or "tls" in error_description:
+                connection_category = "db_tls"
+            elif "no pg_hba.conf entry" in error_description:
+                connection_category = "db_access_denied"
+            elif "does not exist" in error_description:
+                connection_category = "db_missing_resource"
+            else:
+                connection_category = "other"
+            # Emit categorical diagnostics only, never the database URI or error text.
             logging.getLogger("btc.api").error(
-                "API_UNHANDLED_EXCEPTION class=%s sqlstate=%s",
+                "API_UNHANDLED_EXCEPTION class=%s sqlstate=%s category=%s",
                 type(exc).__name__,
                 getattr(exc, "sqlstate", None),
+                connection_category,
             )
             if current_is_prod:
                 response = JSONResponse(
