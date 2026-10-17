@@ -64,6 +64,12 @@ jobs:
                      or p.startswith('.env') and p != '.env.example']
           assert not forbidden, f'Forbidden tracked paths: {forbidden}'
           PY
+      - name: F2 initialize fresh PostgreSQL schema for role grants
+        env:
+          BTC_DB_BACKEND: postgres
+          BTC_TEST_DATABASE: 'YES'
+          BTC_DATABASE_URL: postgresql://f2_test:f2_ci_only@localhost:5432/btc_f2_test
+        run: python -c "from app.storage.postgres import initialize_pg; initialize_pg()"
       - name: F2 provision least-privilege roles on disposable database
         run: |
           set -euo pipefail
