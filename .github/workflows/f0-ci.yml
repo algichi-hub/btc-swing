@@ -51,7 +51,7 @@ jobs:
       - name: Syntax compilation
         run: python -m compileall -q app tests
       - name: Run F0 and F1 algorithm regression
-        run: python -m pytest -q tests/test_f0_baseline.py tests/test_f0_smoke.py tests/test_f1_golden.py tests/test_f1_contracts.py tests/test_f1_exits.py tests/test_f2_unit.py tests/test_f3_unit.py tests/test_f4_operations.py tests/test_f4_password_change.py
+        run: python -m pytest -q tests/test_f0_baseline.py tests/test_f0_smoke.py tests/test_f1_golden.py tests/test_f1_contracts.py tests/test_f1_exits.py tests/test_f2_unit.py tests/test_f3_unit.py tests/test_f4_operations.py tests/test_f4_password_change.py tests/test_f4_recovery_codes.py
       - name: Excluded file policy
         run: |
           python - <<'PY'
@@ -70,6 +70,10 @@ jobs:
           BTC_TEST_DATABASE: 'YES'
           BTC_DATABASE_URL: postgresql://f2_test:f2_ci_only@localhost:5432/btc_f2_test
         run: python -c "from app.storage.postgres import initialize_pg; initialize_pg()"
+      - name: F4 apply additive recovery-code schema on disposable database
+        env:
+          PGPASSWORD: f2_ci_only
+        run: psql -h localhost -U f2_test -d btc_f2_test -v ON_ERROR_STOP=1 -f migrations/0003_recovery_codes.sql
       - name: F2 provision least-privilege roles on disposable database
         run: |
           set -euo pipefail
