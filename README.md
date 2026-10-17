@@ -15,5 +15,6 @@ Migración controlada de la aplicación V4 (Raspberry Pi) a **Railway (motor Pyt
 - **[Plan maestro de ejecución V5 — fases, subfases, entry/exit criteria y tests](docs/PLAN_MAESTRO_V5.md)** (documento rector)
 - [Auditoría V4 y plan de riesgos V5](docs/AUDITORIA_V4_RIESGOS_V5.md)
 - [Gates, pruebas y evidencias](docs/GATES_Y_EVIDENCIAS.md)
+- **[Acta F2 — Neon PostgreSQL, tests, roles y riesgos](docs/F2_EJECUCION_Y_HALLAZGOS.md)**
 
-> Estado: documentación de planificación. No implica que infraestructura o pruebas estén implementadas.
+> Estado: F0, F1 y F2 validados; proyecto y esquema Neon Preview/Production creados, **sin datos históricos ni credenciales de aplicación activadas**. Railway y Vercel pendientes de F3/F4.
