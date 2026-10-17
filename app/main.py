@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 import os
 from datetime import datetime, timedelta, timezone
 import hmac
+import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, Response
@@ -723,7 +724,13 @@ def create_app(app_env: str | None = None) -> FastAPI:
         current_is_prod = is_prod or settings.app_env.strip().lower() == "production"
         try:
             response = await call_next(request)
-        except Exception:
+        except Exception as exc:
+            # Avoid logging request bodies, credentials, SQL parameters or connection URIs.
+            logging.getLogger("btc.api").error(
+                "API_UNHANDLED_EXCEPTION class=%s sqlstate=%s",
+                type(exc).__name__,
+                getattr(exc, "sqlstate", None),
+            )
             if current_is_prod:
                 response = JSONResponse(
                     status_code=500,
