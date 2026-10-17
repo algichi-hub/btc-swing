@@ -202,3 +202,5 @@ Toda variación de algoritmos, versiones, intervalo, semántica de señales, est
 **Siguiente hito:** desbloquear acciones del conector Railway, desplegar worker Preview y ejecutar pruebas dinámicas bloqueantes G3. No iniciar F4 como gate aprobado hasta GO.
 
 **Actualización F3 17-10-2026:** 9 pruebas adversariales adicionales PASS CI, SIGKILL Linux+Postgres con idempotencia de PAPER, en Railway dos réplicas/new slot y error red recuperado, pausa real 677s con RETRASADO y recuperación, 1 réplica restaurada. Falta prueba de corte mid-cycle dentro de Railway; G3 sigue NO-GO estricto. [Acta](F3_PRUEBAS_ADVERSARIALES_20261017.md).
+
+**F4 en curso (17-10-2026):** El usuario autorizó avanzar con el riesgo residual G3 conocido y documentado, sin otorgar GO automático a G3. API de observabilidad y ventana LOG implementadas, Vercel Preview READY, Railway API staged a falta de credenciales de rol web y CSRF. E2E sigue pendiente; G4 NO-GO. [Acta F4](F4_EJECUCION_Y_HALLAZGOS.md).
