@@ -1980,6 +1980,50 @@ function applyRbacUI(user) {
   }
 }
 
+function attachPasswordChange() {
+  const form = byId('password-change-form');
+  const feedback = byId('password-change-feedback');
+  const button = byId('password-change-submit');
+  if (!form || !feedback || !button) return;
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const current = byId('password-current').value;
+    const next = byId('password-new').value;
+    const confirm = byId('password-confirm').value;
+    feedback.textContent = '';
+    if (!current || next.length < 16 || next.length > 256 || next !== confirm || current === next) {
+      feedback.textContent = 'Comprueba la contraseña actual, la confirmación y el mínimo de 16 caracteres.';
+      return;
+    }
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ current_password: current, new_password: next }),
+      });
+      if (response.status === 401) {
+        window.location.assign('/login');
+        return;
+      }
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        feedback.textContent = data.detail || 'No se pudo cambiar la contraseña.';
+        return;
+      }
+      form.reset();
+      currentCsrfToken = null;
+      feedback.textContent = 'Contraseña actualizada. Cerrando sesiones...';
+      window.location.assign('/login');
+    } catch (_) {
+      feedback.textContent = 'No se pudo conectar con el servidor.';
+    } finally {
+      button.disabled = false;
+    }
+  });
+}
+
 async function bootstrap() {
   const user = await checkAuth();
   if (!user) {
@@ -1991,6 +2035,7 @@ async function bootstrap() {
 
   attachNavigation();
   attachSettingsForm();
+  attachPasswordChange();
   attachTelegramTestButton();
   attachDatabaseReset();
   attachTradeDiagnosticsToggle();
