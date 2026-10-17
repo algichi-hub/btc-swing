@@ -28,7 +28,7 @@ GRANT SELECT ON
     notification_outbox, telegram_events
 TO btc_v5_web_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON
-    users, auth_sessions, auth_login_attempts, app_settings, push_subscriptions
+    users, auth_sessions, auth_login_attempts, auth_recovery_codes, app_settings, push_subscriptions
 TO btc_v5_web_app;
 GRANT USAGE, SELECT ON SEQUENCE
     users_id_seq, auth_sessions_id_seq, auth_login_attempts_id_seq,
