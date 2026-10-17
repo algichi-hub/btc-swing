@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import sqlite3
+import hashlib
+import hmac
+import re
+import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -152,6 +156,101 @@ class AuthService:
             conn.execute("UPDATE auth_sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL",
                          (_utc_now_iso(), user_id))
             return True
+
+    @staticmethod
+    def _recovery_hash(code: str) -> str:
+        return hashlib.sha256(("btc-swing-recovery-v1:" + code).encode("ascii")).hexdigest()
+
+    @staticmethod
+    def _normalize_recovery_code(code: str) -> str | None:
+        if not isinstance(code, str) or len(code) > 64:
+            return None
+        compact = re.sub(r"[-\\s]", "", code).lower()
+        return compact if re.fullmatch(r"[0-9a-f]{32}", compact) else None
+
+    def recovery_codes_remaining(self, user_id: int) -> int:
+        with connect(self.db_path) as conn:
+            result = conn.execute(
+                "SELECT count(*) AS total FROM auth_recovery_codes WHERE user_id = ? AND used_at IS NULL",
+                (user_id,),
+            ).fetchone()
+            return int(result["total"])
+
+    def generate_recovery_codes(self, user_id: int, password: str) -> list[str] | None:
+        """Replace existing recovery codes after verifying current password."""
+        if not isinstance(password, str) or len(password) > 256:
+            return None
+        codes = [secrets.token_hex(16) for _ in range(10)]
+        with connect(self.db_path) as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            user = self.repository.get_user_by_id(conn, user_id)
+            if user is None or not user.enabled or not verify_password(password, user.password_hash):
+                return None
+            conn.execute("DELETE FROM auth_recovery_codes WHERE user_id = ?", (user_id,))
+            now = _utc_now_iso()
+            for code in codes:
+                conn.execute(
+                    "INSERT INTO auth_recovery_codes(code_hash,user_id,created_at,used_at) VALUES(?,?,?,NULL)",
+                    (self._recovery_hash(code), user_id, now),
+                )
+        return ["-".join(code[i:i+8] for i in range(0, 32, 8)) for code in codes]
+
+    def _recovery_buckets(self, username: str, client_ip: str):
+        # Separate from ordinary login lockouts; do not expose whether user exists.
+        return [("recovery:global", 100, 3600, 900),
+                ("recovery:user:" + username, 5, 900, 900),
+                ("recovery:ip:" + client_ip, 15, 900, 900)]
+
+    def recovery_is_locked(self, username: str, client_ip: str) -> tuple[bool, int]:
+        with connect(self.db_path) as conn:
+            keys = [entry[0] for entry in self._recovery_buckets(username, client_ip)]
+            locked, retry, _ = self.repository.check_login_rate_limits(conn, keys, _utc_now())
+            return locked, retry
+
+    def reset_password_with_code(self, username: str, code: str, new_password: str,
+                                 client_ip: str) -> str:
+        """Return 'OK', 'INVALID' or 'LOCKED'; use a single transaction for one-use consume."""
+        try:
+            normalized = normalize_username(username)
+        except (ValueError, TypeError):
+            normalized = "invalid"
+        if not isinstance(client_ip, str):
+            client_ip = "unknown"
+        buckets = self._recovery_buckets(normalized, client_ip)
+        candidate = self._normalize_recovery_code(code)
+        if not isinstance(new_password, str) or not 16 <= len(new_password) <= 256:
+            return "INVALID"
+        with connect(self.db_path) as conn:
+            conn.execute("BEGIN IMMEDIATE")
+            now = _utc_now()
+            locked, _, _ = self.repository.check_login_rate_limits(
+                conn, [key for key, _, _, _ in buckets], now,
+            )
+            if locked:
+                return "LOCKED"
+            user = self.repository.get_user_by_username(conn, normalized)
+            if user is not None and user.enabled and candidate is not None:
+                digest = self._recovery_hash(candidate)
+                row = conn.execute(
+                    "SELECT code_hash FROM auth_recovery_codes WHERE user_id = ? AND code_hash = ? AND used_at IS NULL",
+                    (user.id, digest),
+                ).fetchone()
+                if row is not None and hmac.compare_digest(row["code_hash"], digest):
+                    updated = conn.execute(
+                        "UPDATE auth_recovery_codes SET used_at = ? WHERE code_hash = ? AND used_at IS NULL",
+                        (now.isoformat(), digest),
+                    )
+                    if updated.rowcount == 1:
+                        self.repository.update_password_hash(conn, user.id, hash_password(new_password))
+                        conn.execute(
+                            "UPDATE auth_sessions SET revoked_at = ? WHERE user_id = ? AND revoked_at IS NULL",
+                            (now.isoformat(), user.id),
+                        )
+                        conn.execute("DELETE FROM auth_login_attempts WHERE attempt_key = ?",
+                                     ("recovery:user:" + normalized,))
+                        return "OK"
+            self.repository.record_login_failure_atomic(conn, buckets, now)
+            return "INVALID"
 
     def create_session(
         self, user_id: int, ttl_hours: int | None = None
