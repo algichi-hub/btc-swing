@@ -1,0 +1,22 @@
+name: F4 diagnose login Preview only
+on:
+  push:
+    branches:
+      - test/f4-diagnose-live-login-500
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Single intentional bad-login request
+        run: |
+          set -euo pipefail
+          result="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' -X POST \
+           -H 'Origin: https://btc-swing-v5-git-main-algichi-7752.vercel.app' \
+           -H 'Content-Type: application/json' \
+           --data '{"username":"diagnostic_nonexistent","password":"no-real-credentials"}' \
+           https://btc-v5-api-preview-preview.up.railway.app/api/auth/login)"
+          echo "Diagnostic request status: $result"
+          test "$result" = '401' || test "$result" = '500'
