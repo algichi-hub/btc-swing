@@ -150,3 +150,6 @@ Evidencias: [acta F3](F3_EJECUCION_Y_HALLAZGOS.md), tests PostgreSQL efímero y 
 - No desplegar trading real ni conectar escritura externa sin aprobación específica.
 - Mantener fuente V4 en Raspberry durante desarrollo y activar V5 con una única fuente operativa.
 - Actualizar este archivo al cerrar cada gate: añadir riesgo si aparece uno nuevo y actualizar evaluaciones/estado y evidencias.
+
+### Revisión operativa Railway Preview — 2026-10-17
+Dos ciclos completos sobre Neon Preview y reinicio sin reintentar slots `OK`. Escala temporal 2 réplicas confirmada y devuelta a 1. R02/R04/R08/R12/R17 mantienen riesgo residual por ausencia de inyección real de fallos, simultaneidad de slot nuevo y observación de stale >660 s. **G3 sigue NO-GO**. Evidencia y alcance en [F3 Railway Preview](F3_RAILWAY_PREVIEW_ESTADO.md).
