@@ -54,3 +54,14 @@ El usuario autorizó progresar desde F3 con el riesgo de crash mid-cycle conocid
 - Nuevo modo interactivo --emit-sql genera SQL de alta con hash Argon2id en el PC, sin conexión remota ni password en el SQL resultante; bloquea alta si la tabla users no está vacía.
 - [Guía segura de activación F4 Preview](F4_ACTIVAR_PREVIEW.md): rol Neon web, credenciales privadas Railway, secreto base64url, bootstrap admin y pruebas E2E pendientes.
 - G4 sigue NO-GO hasta validación real del login Vercel→Railway→Neon; no reutilizar credencial del worker.
+
+## F4 despliegue y comprobaciones externas — 17-10-2026, 18:50 UTC
+
+- Se aplicó el patch Railway Preview exclusivamente a `btc-v5-api-preview` (fuente GitHub `main` y variables secretas `AUTH_CSRF_SECRET`, `BTC_DATABASE_URL`). No cambió `btc-v5-engine-preview`.
+- Primer inicio FastAPI correcto; healthcheck Railway respondió inicialmente 400 por `TrustedHostMiddleware`. Se corrigió `AUTH_ALLOWED_HOSTS` para incluir `healthcheck.railway.app` y el dominio público pasó de puerto 8000 a 8080, puerto del proceso. Nuevo deployment `bb698f82-6963-4e80-ad82-3fd626f696af`: **SUCCESS**, logs registran GET /health **200**.
+- La conexión del rol `btc_v5_web_app` a Neon Preview se comprobó ejecutando SELECT reales: 122 logs y 110 worker cycles accesibles. El rol web está autenticado por contraseña; no se ha consultado ni impreso el secreto.
+- En Neon Preview, `SELECT count(*) FROM users` = **0**. Por tanto, no existe todavía usuario ADMIN y es imposible ejecutar login real de extremo a extremo sin su alta.
+- Smoke externo GitHub Actions [run 39059921910](https://github.com/algichi-hub/btc-swing/actions/runs/39059921910) **SUCCESS**: HTTPS /health=200; /api/ops/status=401; /api/ops/logs=401; /api/auth/me=401; /ops=307; POST login con Origin malicioso=403. Se ejecutó contra Railway real, sin secretos.
+- El acceso al despliegue protegido de Vercel desde su conector devolvió **403 forbidden** en `read_protection_bypass`; el proveedor requiere ampliar la autorización de conexión al proyecto/equipo o confirmar privilegios del usuario. **No se deshabilitó protección de Vercel** ni se aseguró que la sesión funcione a través del proxy.
+- **G4 NO-GO** a pesar de servicio API y persistencia en funcionamiento: pendiente primer administrador creado con Argon2id sin compartir contraseña, login/logout reales, CSRF con cookie de navegador por dominio Vercel, RBAC ADMIN/VIEWER y rate limiting E2E, así como permiso del conector Vercel para consultar el despliegue protegido. 
+- Engine Railway Preview continúa en **SUCCESS**; no se ha alterado Neon Production, Raspberry V4, ni activado trading real.
