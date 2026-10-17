@@ -12,6 +12,17 @@ import requests
 from app.market.hyperliquid import HyperliquidClient, HyperliquidError
 
 
+
+@pytest.fixture(scope="module", autouse=True)
+def ensure_disposable_schema():
+    import os
+    if os.getenv("BTC_TEST_DATABASE") != "YES" or os.getenv("BTC_DB_BACKEND") != "postgres":
+        return
+    from app.storage.postgres import initialize_pg
+    from app.storage.worker_migration import apply_worker_migration
+    initialize_pg()
+    apply_worker_migration()
+
 @pytest.mark.parametrize("kind", ["timeout", "http429", "invalid_json"])
 def test_hyperliquid_errors_are_detected_without_network(kind, monkeypatch):
     client = HyperliquidClient("https://nonexistent.invalid/info", timeout_seconds=0.1)
