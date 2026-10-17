@@ -200,3 +200,5 @@ Toda variación de algoritmos, versiones, intervalo, semántica de señales, est
 | F6 | G6 | Pendiente | Sin despliegue de producción | NO-GO |
 
 **Siguiente hito:** desbloquear acciones del conector Railway, desplegar worker Preview y ejecutar pruebas dinámicas bloqueantes G3. No iniciar F4 como gate aprobado hasta GO.
+
+**Actualización F3 17-10-2026:** 9 pruebas adversariales adicionales PASS CI, SIGKILL Linux+Postgres con idempotencia de PAPER, en Railway dos réplicas/new slot y error red recuperado, pausa real 677s con RETRASADO y recuperación, 1 réplica restaurada. Falta prueba de corte mid-cycle dentro de Railway; G3 sigue NO-GO estricto. [Acta](F3_PRUEBAS_ADVERSARIALES_20261017.md).
