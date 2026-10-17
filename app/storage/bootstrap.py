@@ -16,8 +16,8 @@ def provision_admin(username: str, password: str) -> int:
         raise ValueError("Administrator password must contain at least 16 characters")
     from app.auth.security import hash_password
     from app.storage.postgres import connect_pg
-    from app.storage.postgres import initialize_pg
-    initialize_pg()
+    # Schema migrations belong to the privileged migration owner, never the web role.
+    # Bootstrap only enrolls an administrator against an existing Neon schema.
     with connect_pg() as conn:
         conn.execute("SELECT pg_advisory_xact_lock(5022026)")
         row = conn.execute("SELECT count(*) AS n FROM users").fetchone()
