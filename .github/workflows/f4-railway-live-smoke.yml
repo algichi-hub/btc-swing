@@ -1,0 +1,43 @@
+name: F4 live Railway Preview unauthenticated smoke
+on:
+  push:
+    branches: ['test/f4-api-public-smoke']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  railway-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify Railway HTTPS public health and unauthorized access controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://btc-v5-api-preview-preview.up.railway.app'
+          check() {
+            local expected="$1" path="$2"
+            local result
+            result="$(curl --silent --show-error --max-time 20 --output /dev/null --write-out '%{http_code}' "$base$path")"
+            printf 'GET %s => %s (expected %s)\n' "$path" "$result" "$expected"
+            test "$result" = "$expected"
+          }
+          check 200 /health
+          check 401 /api/ops/status
+          check 401 /api/ops/logs
+          check 401 /api/auth/me
+          check 307 /ops
+      - name: Reject unauthorized cross-origin login
+        shell: bash
+        run: |
+          set -euo pipefail
+          code="$(curl --silent --show-error --max-time 20 -X POST \
+            -H 'Content-Type: application/json' \
+            -H 'Origin: https://foreign.invalid' \
+            -d '{"username":"no_such_test_user","password":"incorrect"}' \
+            --output /dev/null --write-out '%{http_code}' \
+            https://btc-v5-api-preview-preview.up.railway.app/api/auth/login)"
+          echo "Untrusted Origin login status: $code"
+          test "$code" = "403"
