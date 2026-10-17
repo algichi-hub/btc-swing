@@ -12,6 +12,7 @@ Migración controlada de la aplicación V4 (Raspberry Pi) a **Railway (motor Pyt
 - Cada gate exige checklist, pruebas registradas, tratamiento de riesgos y decisión GO/NO-GO explícita.
 
 ## Documentación viva
+- **[Plan maestro de ejecución V5 — fases, subfases, entry/exit criteria y tests](docs/PLAN_MAESTRO_V5.md)** (documento rector)
 - [Auditoría V4 y plan de riesgos V5](docs/AUDITORIA_V4_RIESGOS_V5.md)
 - [Gates, pruebas y evidencias](docs/GATES_Y_EVIDENCIAS.md)
 
