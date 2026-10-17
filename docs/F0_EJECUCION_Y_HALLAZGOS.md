@@ -49,3 +49,25 @@
 5. Completar T00-01 .. T00-05; realizar revisión de riesgos R01/R06/R11/R15/R18 y acta de gate.
 
 **Resultado:** F0 comenzada, **G0 NO-GO**. Las comprobaciones estáticas son reales; no se afirma que el backend arranque ni que la seguridad operativa esté validada.
+
+## Iteración F0.02–F0.04 · 2026-10-17
+
+### Código y pruebas
+- Se generó localmente el artefacto **`v5_f0_source_tests.zip`**, 56 archivos, SHA-256 `a5d8b9042162e3761e0e062765f58b3bc62cdfccca20b33caac5960318ff32cc`. Contiene la fuente saneada V4, el cambio de seguridad en `app/config.py` y la suite de pruebas.
+- Se añadió a esta rama **`tests/test_f0_baseline.py`**. IMPORTANTE: el código de `app/` aún no ha sido publicado en GitHub; por tanto **la ejecución de tests documentada abajo fue local sobre el ZIP saneado y no es una ejecución CI del repositorio**. La suite en GitHub quedará pendiente hasta importar el código.
+- **Defecto confirmado:** el secreto CSRF de ejemplo incorporado en V4 era aceptado en `APP_ENV=production`. El test de regresión falló contra V4 original: **10 PASS, 1 FAIL**. Modificación de seguridad aplicada únicamente a la copia local V5: prohibir secreto predeterminado en producción, manteniendo flujos de desarrollo. Re-ejecución: **11 PASS, 0 FAIL**. No se ha tocado la Pi.
+- `python -m compileall -q app tests`: PASS. `pytest -q tests/test_f0_baseline.py`: 11 PASS local. Los tests incluyen AST de fuentes, inventario `requests.post`, ausencia de patrones conocidos de órdenes, configuración segura, Argon2, token de sesión, umbral volumen, scheduler 300 s y scripts de frontend.
+- Revisión estática de HTTP: se encontró `requests.post` en `app/notifications/telegram.py`, sin `requests.put/delete/patch` directas; no demuestra ausencia completa de órdenes en librerías/rutas indirectas.
+- `APScheduler` no está instalado en el runtime de inspección; **no** se ha demostrado el arranque completo ni se ha ejecutado regresión funcional del motor. No hay `tests/` originales en el ZIP V4.
+- Paquete GitHub pendiente: **no dar G0 por aprobado hasta importar `app/` y ejecutar estos tests en el checkout real y en CI**.
+
+### Estado G0 tras iteración
+| Test | Estado | Evidencia |
+|---|---|---|
+| T00-01 | PARCIAL | AST y compilación PASS; smoke arranque pendiente |
+| T00-02 | PARCIAL | Filtrado fuente y escaneo de patrones; falta escaneo historial y revisión profunda |
+| T00-03 | PARCIAL | compilación PASS; dependencia APScheduler ausente en este runtime |
+| T00-04 | PARCIAL | call sites HTTP directos inventariados; pendiente interacciones indirectas |
+| T00-05 | NOT RUN | No se ha arrancado un worker cloud ni interceptado todas sus salidas |
+
+**Gate G0: NO-GO.** Código fuente aún no está en GitHub y no hay evidencias CI. No se ha usado Railway, Neon, Vercel ni Raspberry.
