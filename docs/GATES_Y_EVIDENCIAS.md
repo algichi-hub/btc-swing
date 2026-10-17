@@ -131,3 +131,10 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - Corte mid-cycle dentro de Railway no ejecutado por bloqueo de herramienta; protección SIGKILL verificada en CI. **G3 NO-GO estricto** hasta prueba directa o aceptación formal de equivalencia.
 
 | 2026-10-17 | G4 | API ops + vista logs, CI, Vercel READY y Railway API staged | E2E autenticación y secretos Neon Preview pendientes | NO-GO |
+
+## Auditoría transversal posterior al login Vercel — 17-10-2026
+- **Referencia:** [Auditoría G0–G4 y entrada F5](AUDITORIA_G0_G4_Y_ENTRADA_F5_20261017.md).
+- G0/G1/G2 conservan GO previo, sin reejecutar todas las pruebas en esta revisión.
+- G3 **NO-GO estricto**: ensayo SIGKILL mid-write dentro de Railway pendiente o aceptación formal explícita de equivalencia CI+Railway.
+- G4 **NO-GO estricto**: login ADMIN Vercel validado por usuario tras corrección de Origin y despliegue API SHA `caaebf1` SUCCESS, pero T04-02..10 tienen pruebas parciales/NOT RUN. CI del último SHA no acreditada por status combinado vacío.
+- F5: **preparación de diseño admisible**, gate de entrada bloqueado hasta G3/G4 GO con evidencias.
