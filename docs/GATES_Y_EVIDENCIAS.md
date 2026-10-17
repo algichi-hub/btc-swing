@@ -59,14 +59,17 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - **Evidencia parcial:** [Acta F3](F3_EJECUCION_Y_HALLAZGOS.md) y workflow F3 GitHub Actions. **No marcar GO** sin Railway.
 
 ## G4 — API, seguridad y ventana de logs
-**Estado:** PENDIENTE · **Decisión:** NO-GO
-- [ ] Login, logout, expiración y autorización ADMIN/VIEWER; CSRF, Argon2, TLS, proxy.
-- [ ] APIs compatibles con dashboard y paginación.
-- [ ] Ventana log en frontend para eventos de scheduler/motor/mercado/push.
-- [ ] Logs accesibles solo a autenticados con permiso; sin secretos; límites de tamaño y retención.
-- [ ] Visualizar última ejecución válida, tiempo desde heartbeat y errores; simular ciclo detenido y ver estado tardío.
-- [ ] Pruebas de reset DB, rate limiting, caché y recuperación del login.
-- [ ] Revisar R04, R06, R10, R13, R16, R17, R19, R21, R22, R23, R24.
+**Estado:** IMPLEMENTACIÓN PARCIAL VERIFICADA EN CI · **Decisión:** NO-GO
+- [x] Reutilizar autenticación Argon2/ADMIN/VIEWER/cookies/CSRF del servidor original y añadir API observabilidad protegida.
+- [x] API estado y logs paginados con filtros estrictos, redacción y respuesta 401 anónima.
+- [x] Vista LOG accesible desde Home, filtros, paginación, heartbeat y estados OK/ERROR/RETRASADO/SIN DATOS.
+- [x] Corrección de dos usos dinámicos de innerHTML en front V4 y tests XSS básicos.
+- [x] Vercel Preview compilado READY y proxy same-origin configurado; Railway API Preview creada sin desplegar por falta de secretos.
+- [ ] E2E login/logout/expiración ADMIN/VIEWER desde Vercel HTTPS con cookies, Origin y CSRF.
+- [ ] Credencial Neon web separada, AUTH_CSRF_SECRET seguro y primer administrador habilitado sin secretos en GitHub.
+- [ ] Ensayar reset DB, rate limiting, caché privada, rotación de sesión y fallos API.
+- [ ] Revisar R04, R06, R10, R13, R16, R17, R19, R21, R22, R23, R24 tras E2E real.
+- **Acta:** [F4](F4_EJECUCION_Y_HALLAZGOS.md). **G4 NO-GO**, no atribuir a tests simulados validación cloud autenticada.
 
 ## G5 — PWA y Web Push
 **Estado:** PENDIENTE · **Decisión:** NO-GO
@@ -126,3 +129,5 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - [Acta adversarial F3](F3_PRUEBAS_ADVERSARIALES_20261017.md): 9 tests nuevos PASS en GitHub Actions, incluidos SIGKILL real del proceso CI y replay PAPER/TP1 con PostgreSQL; 117 pruebas anteriores PASS.
 - Railway Preview: dos workers en slot 12:30 sin duplicados; red Hyperliquid fallida 12:35 recuperada en intento 3; suspensión real >660 s que mostró RETRASADO a los 677 s; restauración con slots 12:55 y 13:00 OK.
 - Corte mid-cycle dentro de Railway no ejecutado por bloqueo de herramienta; protección SIGKILL verificada en CI. **G3 NO-GO estricto** hasta prueba directa o aceptación formal de equivalencia.
+
+| 2026-10-17 | G4 | API ops + vista logs, CI, Vercel READY y Railway API staged | E2E autenticación y secretos Neon Preview pendientes | NO-GO |

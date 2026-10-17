@@ -155,3 +155,10 @@ Evidencias: [acta F3](F3_EJECUCION_Y_HALLAZGOS.md), tests PostgreSQL efímero y 
 Dos ciclos completos sobre Neon Preview y reinicio sin reintentar slots `OK`. Escala temporal 2 réplicas confirmada y devuelta a 1. R02/R04/R08/R12/R17 mantienen riesgo residual por ausencia de inyección real de fallos, simultaneidad de slot nuevo y observación de stale >660 s. **G3 sigue NO-GO**. Evidencia y alcance en [F3 Railway Preview](F3_RAILWAY_PREVIEW_ESTADO.md).
 
 Revisión F3 2026-10-17: R02 conserva riesgo residual de SIGKILL dentro de Railway (SIGKILL probado en CI); R04 y R24 pasan prueba real de heartbeat RETRASADO a 677 s y recuperación; R08 pasa fallo real de red recuperado, 429 simulado CI. Ver [acta adversarial](F3_PRUEBAS_ADVERSARIALES_20261017.md). G3 NO-GO pendiente.
+
+### Revisión parcial F4 — 2026-10-17
+- **R06**: acceso a logs requiere autenticación; filtros estrictos, redacción y XSS tooltips corregidos; pendiente validación real Origin/cookie/CSRF y login.
+- **R17**: API Neon aún no desplegada; pool, conexiones y carga pendientes.
+- **R20**: proxy mismo origen preparado con Vercel, sin comprobar Set-Cookie/Origin y redirecciones en sesión real.
+- **R02**: user autorizó progreso de F4 asumiendo riesgo residual G3, no se declara cerrado.
+Evidencia en [acta F4](F4_EJECUCION_Y_HALLAZGOS.md). Gate G4 NO-GO.

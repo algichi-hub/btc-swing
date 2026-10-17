@@ -19,3 +19,6 @@ Migración controlada de la aplicación V4 (Raspberry Pi) a **Railway (motor Pyt
 - **[F3 — Worker Railway: código, tests y bloqueos G3](docs/F3_EJECUCION_Y_HALLAZGOS.md)**
 
 > Estado: F0, F1 y F2 validados; proyecto y esquema Neon Preview/Production creados, **sin datos históricos ni credenciales de aplicación activadas**. F3 código worker testado y migración 0002 en Neon Preview, **G3 NO-GO hasta Railway Preview**. Vercel pendiente de F4.
+
+## F4 Preview
+API de observabilidad y frontend de logs implementados y probados. [Acta F4](docs/F4_EJECUCION_Y_HALLAZGOS.md). Vercel Preview READY; Railway API aún no activa hasta configurar credenciales Neon web y secreto CSRF. G4 NO-GO; no modifica Raspberry ni Neon Production.
