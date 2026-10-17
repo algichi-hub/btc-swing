@@ -166,3 +166,22 @@ def test_f2_parallel_transaction_conflict_single_active():
     assert sorted(results)==['inserted','rejected']
     with connect_pg() as conn:
         assert conn.execute("SELECT count(*) AS n FROM trade_opportunities WHERE coin=%s AND status='ACTIVE_UNTRADED'", ('ETH',)).fetchone()['n']==1
+
+def test_f2_least_privilege_roles():
+    from app.storage.postgres import connect_pg
+    with connect_pg() as conn:
+        rows = conn.execute("""
+            SELECT rolname, rolsuper, rolcreatedb, rolcreaterole,
+                   pg_has_role(rolname, 'pg_database_owner', 'MEMBER') AS db_owner,
+                   (SELECT rolpassword IS NULL FROM pg_authid WHERE pg_authid.rolname = pg_roles.rolname) AS password_unset
+            FROM pg_roles
+            WHERE rolname IN ('btc_v5_engine_app','btc_v5_web_app')
+            ORDER BY rolname
+        """).fetchall()
+        assert len(rows) == 2
+        assert all(not row['rolsuper'] and not row['rolcreatedb'] and not row['rolcreaterole'] for row in rows)
+        assert all(row['password_unset'] for row in rows)
+        assert conn.execute("SELECT has_table_privilege('btc_v5_engine_app','trade_signals','INSERT') AS allowed").fetchone()['allowed']
+        assert not conn.execute("SELECT has_table_privilege('btc_v5_web_app','trade_signals','INSERT') AS allowed").fetchone()['allowed']
+        assert not conn.execute("SELECT has_table_privilege('btc_v5_engine_app','auth_sessions','INSERT') AS allowed").fetchone()['allowed']
+        assert conn.execute("SELECT has_table_privilege('btc_v5_web_app','auth_sessions','INSERT') AS allowed").fetchone()['allowed']
