@@ -79,6 +79,12 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - [ ] Revisar TODOS los riesgos abiertos y aceptación explícita residual.
 - [ ] Registrar snapshot/commit de release y aprobación del usuario.
 
+## Ejecución F0 en curso (2026-10-17)
+- Se ejecutaron 11 tests offline PASS únicamente sobre archivo ZIP local; no CI. No se ha demostrado arranque integrado.
+- Rama `develop/f0-v4-baseline`: suite, política gitignore, workflow CI y script de importación preparados; **fuente app/ no publicada todavía**.
+- **G0 = NO-GO**; T00-01/02/03/04 parciales, T00-05 sin ejecución integral.
+- Consultar [bitácora F0](F0_EJECUCION_Y_HALLAZGOS.md).
+
 ## Registro de revisiones
 | Fecha | Gate | Cambio | Pruebas ejecutadas | Resultado |
 |---|---|---|---|---|
