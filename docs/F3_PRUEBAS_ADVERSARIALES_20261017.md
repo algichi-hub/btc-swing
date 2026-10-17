@@ -35,3 +35,20 @@
 ## Infraestructura tras ensayos
 
 Railway Preview: deployment `576db57a-a40e-4415-90c4-c63f3d014e5b`, 1 réplica, builder DOCKERFILE `deploy/railway-worker.Dockerfile`, comando normal `python -m app.automation.cloud_worker`. La URL de Hyperliquid se restauró a `https://api.hyperliquid.xyz/info`. Neon Production y Raspberry V4 permanecen intactos.
+
+
+## Resultado posterior: parada real y recuperación (12:49–13:00 UTC)
+
+**Esta sección sustituye la mención anterior que decía que la prueba de >660 segundos no estaba ejecutada.**
+
+- Se configuró temporalmente en Railway Preview un comando con reanudación automática `sh -c 'sleep 740; exec python -m app.automation.cloud_worker'` y se aplicó mediante nuevo despliegue basado en Dockerfile. El contenedor quedó activo pero el worker sin ejecutar ciclos.
+- Neon mantuvo como último heartbeat `2026-10-17T12:45:15.670Z`; a las `12:55:59Z`, edad **643 s**, estado efectivo **OK**; a `12:56:32Z`, edad **677 s**, estado efectivo **RETRASADO**. No se crearon ciclos de mercado durante la suspensión antes de cruzar el umbral.
+- El comando normal `python -m app.automation.cloud_worker` se restauró y Railway desplegó correctamente `7ef61201-e3dc-4479-ae4b-a51f02fe1336`, estado **SUCCESS**.
+- El worker procesó el slot `12:55 UTC` a las `12:57:18 UTC`, terminado `OK` a las `12:57:31 UTC`; el slot `13:00 UTC` también terminó `OK` al primer intento. **Recuperación live PASS**.
+- **La prueba completa de stale real queda PASS** (parada efectiva, >660 segundos sin heartbeat, estado atrasado calculado y restauración).
+- Para un SIGKILL **dentro de un ciclo Railway en ejecución** se preparó brevemente `drainingSeconds=0, overlapSeconds=0`, pero la coordinación de reinicio fue bloqueada por controles de herramientas. Estos valores se restauraron a defaults. **No se declaró ejecutado el corte mid-cycle Railway**.
+- El test de **SIGKILL real con una escritura persistida** sí pasó en GitHub Actions contra PostgreSQL 17 efímero con el mismo código worker; el rerun dejó una única operación PAPER. Railway además fue reiniciado y recuperado en otros ensayos, pero son evidencias separadas.
+
+**Estado final de F3:** 9 casos adversariales nuevos PASS en CI, 117 regresiones previas PASS, competencia de slot nuevo Railway PASS, red fallida/reintento PASS, stale real/recovery PASS. **G3 sigue NO-GO** respecto al criterio explícito de interrupción a mitad de escritura del proceso Railway, hasta que exista ensayo directo o aceptación documentada de equivalencia CI SIGKILL + Railway redeploy.
+
+**Configuración restaurada:** 1 réplica, `HYPERLIQUID_INFO_URL=https://api.hyperliquid.xyz/info`, `BTC_LIVE_TRADING=false`, Telegram desactivado, `startCommand=python -m app.automation.cloud_worker`, políticas de drenaje y solapamiento por defecto. Sin cambios en Neon Production ni Raspberry.
