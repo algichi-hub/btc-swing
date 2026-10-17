@@ -76,3 +76,7 @@ El plugin Railway figura **instalado y habilitado**, pero no ofrece operaciones 
 6. Actualizar matriz Rxx, evidencias y acta; aprobar G3 solo si todas las pruebas bloqueantes PASS.
 
 No se toca Raspberry ni producción V4.
+
+## Actualización 2026-10-17 — Railway Preview creado
+
+Se ha creado el proyecto Railway privado y el servicio worker Preview y se ha preparado el origen GitHub en un parche staged, **sin ejecutarlo**. La autenticación de `btc_v5_engine_app` en Neon Preview sigue sin contraseña y falta `BTC_DATABASE_URL` en Railway; no se han realizado pruebas runtime reales, por lo que G3 sigue **NO-GO**. Procedimiento exacto y evidencias: [estado Railway Preview](F3_RAILWAY_PREVIEW_ESTADO.md).
