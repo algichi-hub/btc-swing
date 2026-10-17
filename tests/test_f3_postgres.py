@@ -91,3 +91,35 @@ def test_f3_no_external_orders_in_worker_source():
     from pathlib import Path
     src=(Path(__file__).resolve().parents[1]/'app/automation/cloud_worker.py').read_text().lower()
     for forbidden in ('place_order(', 'exchange.order(', 'submit_order('):assert forbidden not in src
+
+
+def test_f3_integrated_v4_engine_with_mock_market_and_persistent_snapshot():
+    """Exercise real V4 engine and repository under F3 session lock with no HTTP."""
+    from pathlib import Path
+    from app.config import Settings
+    from app.automation.trading_engine import TradingAutomationEngine
+    from app.storage.trade_repository import TradeRepository
+    from app.storage.postgres import connect_pg
+    from app.notifications.telegram import TelegramNotifier
+    from app.automation.cloud_worker import run_once
+    repo=TradeRepository(Path('unused-postgres.db'))
+    payload={'timestamp':datetime.now(timezone.utc).isoformat(),
+             'market':{'price':100000.0},
+             'signal':{'state':'NO_TRADE','side':None},
+             'trade_window_open':False,'setup_context':{'active':False}}
+    eng=TradingAutomationEngine(settings=Settings(),repository=repo,
+        telegram_notifier=TelegramNotifier('',''),dashboard_provider=lambda:payload)
+    eng.ensure_pending_pnl_recap=lambda:None
+    eng.track_open_trades=lambda:None
+    eng.retry_pending_trade_alerts=lambda:None
+    with connect_pg() as db:
+        before=db.execute('SELECT count(*) AS n FROM engine_snapshots').fetchone()['n']
+    def run_engine():
+        eng.run_market_cycle()
+        return repo.get_runtime_bool('runtime.last_cycle_success') is True
+    slot=_now()+timedelta(minutes=25)
+    assert run_once(run_engine,now=slot)=='OK'
+    with connect_pg() as db:
+        after=db.execute('SELECT count(*) AS n FROM engine_snapshots').fetchone()['n']
+    assert after==before+1
+    assert run_once(run_engine,now=slot)=='SKIPPED'
