@@ -19,7 +19,6 @@ TRACKING_CANDLES = 5000
 RUNTIME_LAST_MARKET_CYCLE_AT_KEY = "runtime.last_market_cycle_at"
 RUNTIME_LAST_CYCLE_SUCCESS_KEY = "runtime.last_cycle_success"
 RUNTIME_LAST_CYCLE_ERROR_KEY = "runtime.last_cycle_error"
-RUNTIME_PNL_RECAP_SCHEDULE_EFFECTIVE_AT_KEY = "runtime.pnl_recap_schedule_effective_at"
 
 
 def iso_from_ms(timestamp_ms: int) -> str:
