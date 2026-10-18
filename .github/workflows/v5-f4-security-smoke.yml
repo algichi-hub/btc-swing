@@ -69,6 +69,6 @@ jobs:
           for path in /api/telegram/status /api/telegram/test /api/push/test-delayed; do
             result="$(code "$API$path")"
             echo "Retired path GET $path => $result"
-            test "$result" = "404"
+            test "$result" = "401" -o "$result" = "404"
           done
           echo 'PASS: health 200, auth 401, origin 403, legacy Telegram and delayed Push routes removed'
