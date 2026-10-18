@@ -1,0 +1,22 @@
+name: F4 Preview direct settings UI smoke
+on:
+  push:
+    branches: [test/f4-railway-settings-ui]
+permissions: {contents: read}
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify direct Railway frontend and host
+        shell: bash
+        run: |
+          set -euo pipefail
+          host='https://btc-v5-api-preview-preview.up.railway.app'
+          for route in /health /login /static/app.js /static/styles.css; do
+            code="$(curl -sS --max-time 25 -o /dev/null -w '%{http_code}' "$host$route")"
+            echo "$route => $code"
+            test "$code" = 200
+          done
+          curl -fsSL --max-time 25 "$host/login" | grep -q 'loginForm'
+          curl -fsSL --max-time 25 "$host/static/app.js" | grep -q 'attachPasswordChange'
+          curl -fsSL --max-time 25 "$host/static/index.html" | grep -q 'password-change-form'
