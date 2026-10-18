@@ -39,19 +39,6 @@ MIN_OPERATIONAL_RANGE_PCT = "min_operational_range_pct"
 PNL_CHART_DAYS = "pnl_chart_days"
 VOLUME_BASELINE_PERIOD = "volume_baseline_period"
 VOLUME_CONFIRMATION_THRESHOLD = "volume_confirmation_threshold"
-PNL_RECAP_WEEKDAY = "pnl_recap_weekday"
-PNL_RECAP_TIME = "pnl_recap_time"
-
-VALID_PNL_RECAP_WEEKDAYS: tuple[str, ...] = (
-    "MONDAY",
-    "TUESDAY",
-    "WEDNESDAY",
-    "THURSDAY",
-    "FRIDAY",
-    "SATURDAY",
-    "SUNDAY",
-)
-
 SETTING_SPECS: dict[str, SettingSpec] = {
     DAILY_SWING_CANDLES: SettingSpec(
         key=DAILY_SWING_CANDLES,
@@ -131,15 +118,6 @@ SETTING_SPECS: dict[str, SettingSpec] = {
         minimum=0.50,
         maximum=5.00,
     ),
-    PNL_RECAP_WEEKDAY: SettingSpec(
-        key=PNL_RECAP_WEEKDAY,
-        value_type="str",
-        allowed_values=VALID_PNL_RECAP_WEEKDAYS,
-    ),
-    PNL_RECAP_TIME: SettingSpec(
-        key=PNL_RECAP_TIME,
-        value_type="str",
-    ),
 }
 
 
@@ -160,8 +138,6 @@ class SettingsService:
             PNL_CHART_DAYS: 30,  # 30 is a temporary technical default for PNL_CHART_DAYS and is not the final user-approved production default.
             VOLUME_BASELINE_PERIOD: 20,
             VOLUME_CONFIRMATION_THRESHOLD: 1.05,
-            PNL_RECAP_WEEKDAY: "SUNDAY",
-            PNL_RECAP_TIME: "05:00",
         }
 
     def apply_defaults(self) -> None:
