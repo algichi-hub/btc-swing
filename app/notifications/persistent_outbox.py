@@ -80,7 +80,7 @@ def enqueue_real_trade_events(*, lookback_days: int = 7) -> int:
             key=hashlib.sha256(("trade-event:v1:"+str(row["id"])).encode()).hexdigest()
             c=db.execute("""INSERT INTO v5_push_outbox(event_key,kind,public_payload,status,expires_at)
                 VALUES(%s,'TRADE_EVENT',%s::jsonb,'PENDING',now()+interval '24 hours')
-                ON CONFLICT(event_key) DO NOTHING""",(key,__import__("json").dumps({"kind":"TRADE_EVENT","event":kind,"title":"BTC Swing V5"})))
+                ON CONFLICT(event_key) DO NOTHING""",(key,__import__("json").dumps({"kind":"TRADE_EVENT","event":kind,"title":"BTC Swing V5","id":key[:16]})))
             added+=int(c.rowcount==1)
     return added
 
@@ -100,6 +100,6 @@ def enqueue_real_trade_signals() -> int:
                 (event_key,kind,public_payload,status,expires_at)
                 VALUES (%s,'TRADE_EVENT',%s::jsonb,'PENDING',now()+interval '24 hours')
                 ON CONFLICT(event_key) DO NOTHING""",(key,json.dumps({
-                    "kind":"TRADE_EVENT","event":"OPEN","title":"BTC Swing V5"})))
+                    "kind":"TRADE_EVENT","event":"OPEN","title":"BTC Swing V5","id":key[:16]})))
             added+=int(result.rowcount==1)
     return added
