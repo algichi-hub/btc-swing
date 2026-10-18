@@ -39,3 +39,8 @@
 6. Registrar browser/Android, hora, PASS/FAIL, imágenes sin secretos y error observable si corresponde. Ningún código de recuperación ni contraseña se comparte.
 
 **No activar dispatcher de señales ni promover Production** hasta completar T05 críticos y resolver/aceptar formalmente G3/G4.
+
+## Actualización de aceptación Android — 2026-10-18
+- Evidencia funcional aportada por el usuario: Chrome Android **instala** la PWA F5 y el smartphone **recibe correctamente** notificaciones Web Push de prueba enviadas desde la aplicación. Marcar **PASS funcional reportado por usuario** para instalación y entrega manual de prueba; no atribuir a CI ni a logs un ensayo en dispositivo que no han ejecutado.
+- Pendientes de ensayo: PWA cerrada y pantalla bloqueada, persistencia tras reinicio, revocación real, deduplicación/caídas, logout/offline/caché, integración automática con señales, paridad con Telegram y pruebas G3/G4 residuales.
+- G5 sigue **NO-GO de cierre**; F5 Preview queda **GO a validación extendida** sin promover Production.
