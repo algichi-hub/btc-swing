@@ -45,3 +45,10 @@ def test_no_recap_ui_or_scheduler_in_cloud():
     assert 'pnlRecap' not in Path("app/static/app.js").read_text()
     source=Path("app/automation/cloud_worker.py").read_text()
     assert "automation_engine.ensure_pending_pnl_recap = lambda" in source
+
+def test_settings_get_hides_legacy_weekly_recap(monkeypatch):
+    from app.main import get_app_settings
+    legacy={"pnl_chart_days":30,"pnl_recap_weekday":"SUNDAY","pnl_recap_time":"08:00"}
+    with patch("app.main.settings_service.get_all",return_value=legacy):
+        result=get_app_settings()
+    assert result=={"pnl_chart_days":30}
