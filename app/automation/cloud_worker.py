@@ -131,6 +131,13 @@ def run_once(run_engine: Callable[[], object], *, now: datetime | None = None) -
                 conn.execute('''UPDATE worker_cycles SET status='OK',error_code=NULL,
                                 duration_ms=%s,completed_at=now() WHERE cycle_key=%s''',
                              (elapsed,key))
+            # F5 shadow-only audit: after committed OK, never enters trading decision path.
+            if os.getenv('PUSH_SHADOW_EVENTS_ENABLED','false').lower() == 'true':
+                try:
+                    from app.notifications.persistent_outbox import record_shadow_cycle
+                    record_shadow_cycle(key)
+                except Exception:
+                    _LOG.warning('F5 shadow outbox unavailable; trading cycle unaffected')
             _heartbeat(key=key,status='OK',success=True,details='completed')
             _telemetry(severity='INFO',code='CYCLE_COMPLETED',key=key,message='OK')
             return 'OK'
