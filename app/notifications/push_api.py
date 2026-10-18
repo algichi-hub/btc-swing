@@ -108,6 +108,14 @@ def test_notification(body:TestNotification,user=Depends(get_current_user)):
         (body.id,user.id)).fetchone()
     if not row:
         raise HTTPException(status_code=404,detail="Device not found")
+    with connect_pg() as c:
+        permit=c.execute("""INSERT INTO push_test_quota(user_id,endpoint_hash,last_sent_at)
+        VALUES (%s,%s,now()) ON CONFLICT(user_id,endpoint_hash) DO UPDATE
+        SET last_sent_at=now()
+        WHERE push_test_quota.last_sent_at < now() - INTERVAL '60 seconds'
+        RETURNING endpoint_hash""",(user.id,body.id)).fetchone()
+    if not permit:
+        raise HTTPException(status_code=429,detail="Wait before testing this device again")
     cipher=_cipher()
     endpoint=cipher.decrypt(bytes(row["endpoint_ciphertext"])).decode()
     _validate_endpoint(endpoint)
