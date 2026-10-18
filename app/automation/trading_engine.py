@@ -10,7 +10,12 @@ from app.config import Settings
 from app.market.hyperliquid import HyperliquidClient, closed_candles
 from app.models import Candle
 from app.notifications.telegram import TelegramDeliveryError, TelegramNotifier
-from app.settings.service import SettingsService
+from app.settings.service import (
+    PNL_RECAP_TIME,
+    PNL_RECAP_WEEKDAY,
+    VALID_PNL_RECAP_WEEKDAYS,
+    SettingsService,
+)
 from app.storage.trade_repository import TradeRepository
 
 RUNTIME_TRADE_WINDOW_OPEN_KEY = "runtime.trade_window_open"
@@ -19,6 +24,7 @@ TRACKING_CANDLES = 5000
 RUNTIME_LAST_MARKET_CYCLE_AT_KEY = "runtime.last_market_cycle_at"
 RUNTIME_LAST_CYCLE_SUCCESS_KEY = "runtime.last_cycle_success"
 RUNTIME_LAST_CYCLE_ERROR_KEY = "runtime.last_cycle_error"
+RUNTIME_PNL_RECAP_SCHEDULE_EFFECTIVE_AT_KEY = "runtime.pnl_recap_schedule_effective_at"
 
 
 def iso_from_ms(timestamp_ms: int) -> str:
@@ -92,6 +98,50 @@ def compute_daily_summary_window(
     return period_start_utc, period_end_utc, period_start_local, period_end_local
 
 
+def compute_pnl_recap_window(
+    now_utc: datetime,
+    timezone_name: str,
+    *,
+    target_weekday: str,
+    report_hour: int,
+    report_minute: int,
+) -> tuple[datetime, datetime, datetime, datetime]:
+    target_weekday_upper = target_weekday.upper()
+    if target_weekday_upper not in VALID_PNL_RECAP_WEEKDAYS:
+        raise ValueError(f"Invalid weekday: {target_weekday}")
+
+    target_weekday_idx = VALID_PNL_RECAP_WEEKDAYS.index(target_weekday_upper)
+    tz = ZoneInfo(timezone_name)
+    now_local = now_utc.astimezone(tz)
+
+    anchor_today = now_local.replace(hour=report_hour, minute=report_minute, second=0, microsecond=0)
+    days_back = (now_local.weekday() - target_weekday_idx) % 7
+
+    if days_back == 0:
+        if now_local >= anchor_today:
+            period_end_local = anchor_today
+        else:
+            period_end_local = anchor_today - timedelta(days=7)
+    else:
+        target_date = now_local.date() - timedelta(days=days_back)
+        period_end_local = datetime(
+            target_date.year,
+            target_date.month,
+            target_date.day,
+            report_hour,
+            report_minute,
+            0,
+            0,
+            tzinfo=tz,
+        )
+
+    period_start_local = period_end_local - timedelta(days=7)
+    period_start_utc = period_start_local.astimezone(timezone.utc)
+    period_end_utc = period_end_local.astimezone(timezone.utc)
+
+    return period_start_utc, period_end_utc, period_start_local, period_end_local
+
+
 def format_money(amount: float, *, signed: bool = True) -> str:
     prefix = "+" if signed and amount > 0 else ""
     return f"{prefix}${amount:,.2f}"
@@ -146,6 +196,11 @@ class TradingAutomationEngine:
         cycle_error = ""
 
         try:
+            try:
+                self.ensure_pending_pnl_recap()
+            except Exception:
+                self.logger.exception("Market cycle pending pnl recap check failed")
+
             try:
                 self.retry_pending_trade_alerts()
             except Exception:
@@ -269,6 +324,153 @@ class TradingAutomationEngine:
             self.logger.warning("Daily summary delivery failed: %s", exc)
             self.repository.record_telegram_event(
                 event_type="DAILY_SUMMARY",
+                event_key=event_key,
+                success=False,
+                error_message=exc.__class__.__name__,
+            )
+
+    def get_recap_settings(self) -> tuple[str, int, int]:
+        weekday = "SUNDAY"
+        hour = 5
+        minute = 0
+        if self.settings_service is not None:
+            try:
+                all_s = self.settings_service.get_all()
+                weekday = str(all_s.get(PNL_RECAP_WEEKDAY, "SUNDAY"))
+                time_str = str(all_s.get(PNL_RECAP_TIME, "05:00"))
+                parts = time_str.split(":")
+                hour = int(parts[0])
+                minute = int(parts[1])
+            except Exception:
+                pass
+        return weekday, hour, minute
+
+    def ensure_pending_pnl_recap(self, now: datetime | None = None) -> None:
+        now_utc = now or datetime.now(timezone.utc)
+
+        # 1. Check or initialize effective_at marker
+        effective_at_str = self.repository.get_runtime_state(RUNTIME_PNL_RECAP_SCHEDULE_EFFECTIVE_AT_KEY)
+        if effective_at_str is None:
+            # Fresh install / initial start: set effective_at to now_utc and do NOT perform retrospective catch-up
+            self.repository.set_runtime_state(
+                RUNTIME_PNL_RECAP_SCHEDULE_EFFECTIVE_AT_KEY,
+                now_utc.isoformat(),
+            )
+            return
+
+        try:
+            effective_at = datetime.fromisoformat(effective_at_str)
+            if effective_at.tzinfo is None:
+                effective_at = effective_at.replace(tzinfo=timezone.utc)
+        except Exception:
+            self.repository.set_runtime_state(
+                RUNTIME_PNL_RECAP_SCHEDULE_EFFECTIVE_AT_KEY,
+                now_utc.isoformat(),
+            )
+            return
+
+        if not self.settings.telegram_enabled or not self.telegram_notifier.configured:
+            return
+
+        weekday, report_hour, report_minute = self.get_recap_settings()
+
+        period_start_utc, period_end_utc, period_start_local, period_end_local = compute_pnl_recap_window(
+            now_utc,
+            self.settings.telegram_timezone,
+            target_weekday=weekday,
+            report_hour=report_hour,
+            report_minute=report_minute,
+        )
+
+        if period_end_utc <= effective_at or period_end_utc > now_utc:
+            return
+
+        event_key = f"PNL_RECAP:{period_end_utc.isoformat()}"
+        if self.repository.has_successful_telegram_event(event_key):
+            return
+
+        self._send_pnl_recap_window(
+            period_start_utc=period_start_utc,
+            period_end_utc=period_end_utc,
+            period_start_local=period_start_local,
+            period_end_local=period_end_local,
+            event_key=event_key,
+        )
+
+    def run_pnl_recap(self, now: datetime | None = None) -> None:
+        self.ensure_pending_pnl_recap(now=now)
+
+    def recover_missed_pnl_recap(self) -> None:
+        self.ensure_pending_pnl_recap()
+
+    def _send_pnl_recap_window(
+        self,
+        *,
+        period_start_utc: datetime,
+        period_end_utc: datetime,
+        period_start_local: datetime,
+        period_end_local: datetime,
+        event_key: str,
+    ) -> None:
+        period_start_iso = period_start_utc.isoformat()
+        period_end_iso = period_end_utc.isoformat()
+
+        signals = self.repository.count_signals_in_period(period_start_iso, period_end_iso)
+        closed_trades = self.repository.count_closed_trades_in_period(period_start_iso, period_end_iso)
+        open_trades = self.repository.count_open_trades()
+        tp1_hits = self.repository.count_trade_events_in_period("TP1", period_start_iso, period_end_iso)
+        tp2_hits = self.repository.count_trade_events_in_period("TP2", period_start_iso, period_end_iso)
+        tp3_hits = self.repository.count_trade_events_in_period("TP3", period_start_iso, period_end_iso)
+        sl_hits = self.repository.count_trade_events_in_period("SL", period_start_iso, period_end_iso)
+        realized_pnl = self.repository.sum_realized_pnl_in_period(period_start_iso, period_end_iso)
+        average_rr = self.repository.average_weighted_rr_in_period(period_start_iso, period_end_iso)
+        open_pnl = self._compute_open_pnl()
+        total_marked = realized_pnl + open_pnl
+
+        period_line = f"{period_start_local.strftime('%d/%m %H:%M')} → {period_end_local.strftime('%d/%m %H:%M')}"
+
+        if signals == 0 and closed_trades == 0 and tp1_hits == 0 and tp2_hits == 0 and tp3_hits == 0 and sl_hits == 0:
+            message = (
+                "📊 BTC SWING · RECAP SEMANAL\n\n"
+                "Periodo:\n"
+                f"{period_line}\n\n"
+                "Sin nuevas señales.\n\n"
+                f"Trades abiertos: {open_trades}\n"
+                f"PnL realizado: {format_money(0.0, signed=False)}\n"
+                f"PnL abierto: {format_money(0.0, signed=False)}\n"
+                f"PnL total marcado: {format_money(0.0, signed=False)}"
+            )
+        else:
+            rr_text = "N/A" if average_rr is None else f"{average_rr:.2f}"
+            message = (
+                "📊 BTC SWING · RECAP SEMANAL\n\n"
+                "Periodo:\n"
+                f"{period_line}\n\n"
+                f"Señales: {signals}\n"
+                f"Trades cerrados: {closed_trades}\n"
+                f"Trades abiertos: {open_trades}\n\n"
+                f"TP1 alcanzados: {tp1_hits}\n"
+                f"TP2 alcanzados: {tp2_hits}\n"
+                f"TP3 alcanzados: {tp3_hits}\n"
+                f"Stops: {sl_hits}\n\n"
+                f"PnL realizado: {format_money(realized_pnl)}\n"
+                f"PnL abierto: {format_money(open_pnl)}\n"
+                f"PnL total marcado: {format_money(total_marked)}\n\n"
+                f"RR medio: {rr_text}"
+            )
+
+        try:
+            message_id = self.telegram_notifier.send_message(message)
+            self.repository.record_telegram_event(
+                event_type="PNL_RECAP",
+                event_key=event_key,
+                success=True,
+                telegram_message_id=message_id,
+            )
+        except Exception as exc:
+            self.logger.warning("PnL recap delivery failed: %s", exc)
+            self.repository.record_telegram_event(
+                event_type="PNL_RECAP",
                 event_key=event_key,
                 success=False,
                 error_message=exc.__class__.__name__,
