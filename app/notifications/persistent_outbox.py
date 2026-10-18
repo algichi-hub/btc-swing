@@ -92,7 +92,7 @@ def enqueue_real_trade_signals() -> int:
     with connect_pg() as db:
         rows=db.execute("""SELECT id FROM trade_signals
             WHERE created_at::timestamptz >= %s::timestamptz
-            AND status='OPEN' ORDER BY id LIMIT 10000""",(since,)).fetchall()
+            AND origin='PAPER' AND status IN ('OPEN','CLOSED') ORDER BY id LIMIT 10000""",(since,)).fetchall()
         added=0
         for row in rows:
             key=hashlib.sha256(("trade-signal:v1:"+str(row["id"])).encode()).hexdigest()
