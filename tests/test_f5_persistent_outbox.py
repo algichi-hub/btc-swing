@@ -37,3 +37,10 @@ def test_mirror_rejects_wide_lookback():
         mirror_recent_trade_events(lookback_minutes=0)
     with pytest.raises(ValueError):
         mirror_recent_trade_events(lookback_minutes=61)
+
+
+def test_shadow_insert_needs_no_select_on_outbox():
+    from pathlib import Path
+    code=Path('app/notifications/persistent_outbox.py').read_text()
+    assert 'RETURNING id' not in code
+    assert 'rowcount == 1' in code
