@@ -47,3 +47,15 @@
 ## Deuda específica de Telegram
 
 La prohibición de secretos y ejecución Telegram en cloud **no equivale a borrar código legado**. Los imports permanecen como compatibilidad de motor compartido; retirarlos con cambios de estrategia infringiría la condición de invariabilidad. Su eliminación completa requiere refactor controlado y test de paridad que este encargo deja expresamente fuera. **T05-08 permanece NO-GO** hasta entonces.
+
+## Implementación adicional cerrada en código (sin ejecutar tests)
+
+- Los procesos cloud V5 inyectan `NullLegacyNotifier` en `app/main.py`, sin acceso de red ni secretos Telegram; V4/local sigue usando `TelegramNotifier`. No se cambia `app/automation/trading_engine.py`.
+- Se han retirado las rutas `/api/telegram/*` de la tabla de rutas del proceso API cloud V5; el código heredado permanece disponible para instalaciones V4/local no cloud. El guardarraíl impide variables Telegram activas o claves presente en V5 cloud.
+- Se ha retirado de la rama F6 la herramienta temporal F5 de programación Push: botón PWA, endpoint `/api/push/test-delayed`, hook y módulo `delayed_test.py`. Su tabla histórica se **conserva**, y cualquier limpieza SQL posterior requerirá migración con copia y aprobación.
+- `trade_dispatcher.py` distingue eventos sin destinatarios (`EXPIRED`) de notificaciones aceptadas realmente (`SENT`), evitando telemetría equívoca.
+- La versión F5 Preview desplegada permanece sin cambios; **F6 no se ha desplegado**.
+- **Riesgo pendiente explícito:** la suite F5 antigua contiene referencias a `delayed_test.py`; debe migrarse/eliminarse como parte de la fase de tests que el usuario ha excluido ahora. Hasta entonces, no interpretar éxito previo de CI como éxito del branch F6.
+- **Riesgo pendiente:** el borrado físico definitivo del código `TelegramNotifier` compartido con V4 se excluye deliberadamente; sería un cambio en el contrato V4 y exige desacoplamiento y paridad. La ausencia de rutas, secretos y red en V5 cloud es el alcance implementado; el requisito histórico de cero código Telegram permanece como deuda si se interpreta literalmente.
+
+**Estado F6 de implementación:** preparados cambios de código, manifiesto estricto y runbook. **No se han ejecutado pruebas de regresión, pruebas funcionales, pruebas de seguridad, ensayos disruptivos ni despliegues. G6 = NO-GO.**
