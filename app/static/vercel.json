@@ -45,6 +45,10 @@
   ],
   "rewrites": [
     {
+      "source": "/sw.js",
+      "destination": "/sw.js"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://btc-v5-api-preview-preview.up.railway.app/api/:path*"
     },
