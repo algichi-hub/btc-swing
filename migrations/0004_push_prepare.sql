@@ -1,6 +1,6 @@
 -- F5-E0 PREPARATION ONLY. Do not apply until G3/G4 are GO and privileges reviewed.
 -- No public endpoints or dispatcher are enabled by this migration.
-CREATE TABLE IF NOT EXISTS push_subscriptions (
+CREATE TABLE IF NOT EXISTS v5_push_subscriptions (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     endpoint_hash CHAR(64) NOT NULL UNIQUE,
@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_active ON push_subscriptions(user_id,active);
-CREATE TABLE IF NOT EXISTS push_outbox (
+CREATE INDEX IF NOT EXISTS idx_v5_push_subscriptions_user_active ON v5_push_subscriptions(user_id,active);
+CREATE TABLE IF NOT EXISTS v5_push_outbox (
     id BIGSERIAL PRIMARY KEY,
     event_key CHAR(64) NOT NULL UNIQUE,
     kind VARCHAR(50) NOT NULL,
@@ -26,11 +26,11 @@ CREATE TABLE IF NOT EXISTS push_outbox (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX IF NOT EXISTS idx_push_outbox_due ON push_outbox(next_attempt_at,id)
+CREATE INDEX IF NOT EXISTS idx_v5_push_outbox_due ON v5_push_outbox(next_attempt_at,id)
   WHERE status='PENDING';
-CREATE TABLE IF NOT EXISTS push_deliveries (
-    event_id BIGINT NOT NULL REFERENCES push_outbox(id) ON DELETE CASCADE,
-    subscription_id BIGINT NOT NULL REFERENCES push_subscriptions(id) ON DELETE CASCADE,
+CREATE TABLE IF NOT EXISTS v5_push_deliveries (
+    event_id BIGINT NOT NULL REFERENCES v5_push_outbox(id) ON DELETE CASCADE,
+    subscription_id BIGINT NOT NULL REFERENCES v5_push_subscriptions(id) ON DELETE CASCADE,
     state VARCHAR(12) NOT NULL DEFAULT 'PENDING'
       CHECK(state IN ('PENDING','SENT','FAILED','EXPIRED')),
     attempts SMALLINT NOT NULL DEFAULT 0,
@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS push_deliveries (
 -- Store only encrypted endpoints/keys. Production encryption/key rotation and grants are G5 requirements.
 
 -- One test per device/minute, atomically enforced in PostgreSQL.
-CREATE TABLE IF NOT EXISTS push_test_quota (
+CREATE TABLE IF NOT EXISTS v5_push_test_quota (
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     endpoint_hash CHAR(64) NOT NULL,
     last_sent_at TIMESTAMPTZ NOT NULL,
