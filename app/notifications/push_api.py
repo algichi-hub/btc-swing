@@ -88,11 +88,11 @@ def revoke(body:RemoveDevice,user=Depends(get_current_user)):
         c.execute("UPDATE v5_push_subscriptions SET active=false, updated_at=now() WHERE endpoint_hash=%s AND user_id=%s",(body.id,user.id))
     return {"ok":True}
 
-class TestNotification(BaseModel):
+class PushTestRequest(BaseModel):
     id: str = Field(pattern=r"^[a-f0-9]{64}$")
 
 @router.post("/test", dependencies=[Depends(verify_csrf_origin), Depends(verify_csrf_token)])
-def test_notification(body:TestNotification,user=Depends(get_current_user)):
+def send_test_push(body:PushTestRequest,user=Depends(get_current_user)):
     """Send one non-sensitive notification to an opted-in device.
     No trading/event pipeline integration in this endpoint.
     """
