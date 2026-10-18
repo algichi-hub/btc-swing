@@ -108,7 +108,7 @@ settings_service = SettingsService(
     backtest_default=settings.backtest_candles_default,
 )
 trade_repository = TradeRepository(settings.database_path)
-if os.getenv("BTC_PROCESS_ROLE") in {"api", "worker", "push_dispatcher"}:
+if os.getenv("BTC_DB_BACKEND") == "postgres":
     # Preserve the immutable V4 engine interface without providing a network
     # capable Telegram transport to V5 cloud processes.
     from app.notifications.cloud_noop import NullLegacyNotifier
@@ -788,7 +788,7 @@ def telegram_test() -> dict[str, bool]:
 
 
 def create_app(app_env: str | None = None) -> FastAPI:
-    if os.getenv('BTC_PROCESS_ROLE') == 'api':
+    if os.getenv('BTC_DB_BACKEND') == 'postgres':
         from app.release_guard import enforce_cloud_isolation
         enforce_cloud_isolation(role='api')
     env = (app_env or settings.app_env).strip().lower()
@@ -925,7 +925,7 @@ def create_app(app_env: str | None = None) -> FastAPI:
     application.include_router(admin_router)
     # Cloud V5 does not expose Telegram routes. The V4/local app retains its
     # legacy API without changing the shared (golden-hashed) strategy.
-    if os.getenv('BTC_PROCESS_ROLE') == 'api':
+    if os.getenv('BTC_DB_BACKEND') == 'postgres':
         application.router.routes[:] = [
             route for route in application.router.routes
             if not str(getattr(route, 'path', '')).startswith('/api/telegram/')
