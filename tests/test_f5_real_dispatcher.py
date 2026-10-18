@@ -26,3 +26,11 @@ def test_sources_use_persisted_rows_no_algorithm_changes():
     assert text.count("ON CONFLICT(event_key) DO NOTHING")>=3
     assert "PUSH_REAL_EVENTS_SINCE" in text
     assert "'TRADE_EVENT'" in text
+
+def test_service_worker_displays_allowlisted_trades():
+    script=Path("app/static/sw.js").read_text()
+    assert "payload.kind!=='TRADE_EVENT'" in script
+    assert "Nueva señal de entrada" in script
+    assert "Stop loss ejecutado" in script
+    assert "BTC_V5_TEST" in script
+    assert "Object.prototype.hasOwnProperty.call(messages,event)" in script
