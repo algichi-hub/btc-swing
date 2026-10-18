@@ -100,7 +100,7 @@ def test_notification(body:TestNotification,user=Depends(get_current_user)):
         raise HTTPException(status_code=503,detail="Test sending disabled")
     private_key=os.getenv("PUSH_VAPID_PRIVATE_KEY","")
     subject=os.getenv("PUSH_VAPID_SUBJECT","")
-    if not private_key or not subject.startswith("mailto:"):
+    if not private_key or not (subject.startswith("mailto:") or subject.startswith("https://")):
         raise HTTPException(status_code=503, detail="Push service not configured")
     with connect_pg() as c:
         row=c.execute("""SELECT endpoint_ciphertext,p256dh_ciphertext,auth_ciphertext
