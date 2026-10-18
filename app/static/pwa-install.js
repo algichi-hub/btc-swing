@@ -33,12 +33,12 @@ const pushUI = () => {
      name.textContent=d.label+' · '+new Date(d.created_at).toLocaleDateString('es-ES');
      const test=document.createElement('button');test.type='button';test.textContent='Enviar prueba';
      test.addEventListener('click',async()=>{try{await post('/api/push/test',{id:d.id});msg('Envío aceptado; revisa las notificaciones del dispositivo')}catch(e){msg(e.message)}});
-     const delayed=document.createElement('button');delayed.type='button';delayed.textContent='Enviar Push en 120 segundos (temporal)';
+     const delayed=document.createElement('button');delayed.type='button';delayed.textContent='Enviar Push en 30 segundos (temporal)';
      delayed.addEventListener('click',async()=>{
        delayed.disabled=true;
        try{
          const result=await post('/api/push/test-delayed',{id:d.id});
-         msg('Push programado en 120 segundos. Cierra la PWA y bloquea Android.');
+         msg('Push programado en 30 segundos. Cierra la PWA y bloquea Android.');
        }catch(e){msg(e.message)}finally{delayed.disabled=false}
      });
      const revoke=document.createElement('button');revoke.type='button';revoke.textContent='Revocar';
