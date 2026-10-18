@@ -108,10 +108,16 @@ settings_service = SettingsService(
     backtest_default=settings.backtest_candles_default,
 )
 trade_repository = TradeRepository(settings.database_path)
-telegram_notifier = TelegramNotifier(
-    token=settings.telegram_bot_token,
-    chat_id=settings.telegram_chat_id,
-)
+if os.getenv("BTC_PROCESS_ROLE") in {"api", "worker", "push_dispatcher"}:
+    # Preserve the immutable V4 engine interface without providing a network
+    # capable Telegram transport to V5 cloud processes.
+    from app.notifications.cloud_noop import NullLegacyNotifier
+    telegram_notifier = NullLegacyNotifier()
+else:
+    telegram_notifier = TelegramNotifier(
+        token=settings.telegram_bot_token,
+        chat_id=settings.telegram_chat_id,
+    )
 setup_context_manager = SetupContextManager(repository=trade_repository)
 
 
