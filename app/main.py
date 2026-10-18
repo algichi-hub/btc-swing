@@ -41,7 +41,6 @@ from app.automation.trading_engine import (
     RUNTIME_LAST_CYCLE_ERROR_KEY,
     RUNTIME_LAST_CYCLE_SUCCESS_KEY,
     RUNTIME_LAST_MARKET_CYCLE_AT_KEY,
-    RUNTIME_PNL_RECAP_SCHEDULE_EFFECTIVE_AT_KEY,
     RUNTIME_TRADE_WINDOW_OPEN_KEY,
     TradingAutomationEngine,
 )
@@ -611,10 +610,6 @@ def reset_database() -> dict[str, Any]:
         trade_repository.reset_operational_data()
         setup_context_manager.clear()
         trade_repository.set_runtime_bool(RUNTIME_TRADE_WINDOW_OPEN_KEY, False)
-        trade_repository.set_runtime_state(
-            RUNTIME_PNL_RECAP_SCHEDULE_EFFECTIVE_AT_KEY,
-            datetime.now(timezone.utc).isoformat(),
-        )
         return {"ok": True, "message": "Base de datos reseteada correctamente."}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Database reset failed: {exc}") from exc
@@ -744,17 +739,13 @@ def automation_status() -> dict[str, bool | int | str | None]:
 
 @viewer_router.get("/telegram/status")
 def telegram_status() -> dict[str, str | bool | None]:
-    last_recap = (
-        trade_repository.last_successful_telegram_event_at("PNL_RECAP")
-        or trade_repository.last_successful_telegram_event_at("DAILY_SUMMARY")
-    )
+    last_recap = None
     return {
         "enabled": bool(settings.telegram_enabled),
         "configured": bool(telegram_notifier.configured),
         "last_test_at": trade_repository.last_successful_telegram_event_at("TEST"),
         "last_trade_alert_at": trade_repository.last_successful_telegram_event_at("TRADE_ALERT"),
         "last_daily_summary_at": last_recap,
-        "last_pnl_recap_at": last_recap,
     }
 
 
