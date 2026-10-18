@@ -37,8 +37,12 @@ def main():
         raise RuntimeError("Postgres required")
     if os.getenv("PUSH_DISPATCHER_REAL_SEND","false").lower()=="true":
         raise RuntimeError("G3/G4 release gate: real automated push disabled")
+    from app.notifications.delayed_test import drain_delayed_tests
     while True:
-        try:drain_once()
+        try:
+            if os.getenv('PUSH_DELAYED_TEST_ENABLED')=='true':
+                drain_delayed_tests()
+            drain_once()
         except Exception:LOG.exception("dispatcher dryrun failed")
         time.sleep(60)
 
