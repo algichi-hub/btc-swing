@@ -66,7 +66,9 @@ jobs:
           for path in /api/push/subscribe /api/push/test /api/push/revoke; do
             test "$(code -X POST -H 'Origin: https://untrusted.invalid' -H 'Content-Type: application/json' --data '{}' "$API$path")" = "403"
           done
-          test "$(code "$API/api/telegram/status")" = "404"
-          test "$(code -X POST "$API/api/telegram/test")" = "404"
-          test "$(code -X POST "$API/api/push/test-delayed")" = "404"
+          for path in /api/telegram/status /api/telegram/test /api/push/test-delayed; do
+            result="$(code "$API$path")"
+            echo "Retired path GET $path => $result"
+            test "$result" = "404"
+          done
           echo 'PASS: health 200, auth 401, origin 403, legacy Telegram and delayed Push routes removed'
