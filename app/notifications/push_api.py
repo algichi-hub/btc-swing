@@ -87,3 +87,41 @@ def revoke(body:RemoveDevice,user=Depends(get_current_user)):
     with connect_pg() as c:
         c.execute("UPDATE push_subscriptions SET active=false, updated_at=now() WHERE endpoint_hash=%s AND user_id=%s",(body.id,user.id))
     return {"ok":True}
+
+class TestNotification(BaseModel):
+    id: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+@router.post("/test", dependencies=[Depends(verify_csrf_origin), Depends(verify_csrf_token)])
+def test_notification(body:TestNotification,user=Depends(get_current_user)):
+    """Send one non-sensitive notification to an opted-in device.
+    No trading/event pipeline integration in this endpoint.
+    """
+    if not _enabled() or os.getenv("PUSH_TEST_ENABLED","false").lower() != "true":
+        raise HTTPException(status_code=503,detail="Test sending disabled")
+    private_key=os.getenv("PUSH_VAPID_PRIVATE_KEY","")
+    subject=os.getenv("PUSH_VAPID_SUBJECT","")
+    if not private_key or not subject.startswith("mailto:"):
+        raise HTTPException(status_code=503, detail="Push service not configured")
+    with connect_pg() as c:
+        row=c.execute("""SELECT endpoint_ciphertext,p256dh_ciphertext,auth_ciphertext
+        FROM push_subscriptions WHERE endpoint_hash=%s AND user_id=%s AND active=true""",
+        (body.id,user.id)).fetchone()
+    if not row:
+        raise HTTPException(status_code=404,detail="Device not found")
+    cipher=_cipher()
+    endpoint=cipher.decrypt(bytes(row["endpoint_ciphertext"])).decode()
+    _validate_endpoint(endpoint)
+    subscription={"endpoint":endpoint,"keys":{
+       "p256dh":cipher.decrypt(bytes(row["p256dh_ciphertext"])).decode(),
+       "auth":cipher.decrypt(bytes(row["auth_ciphertext"])).decode()}}
+    try:
+        from pywebpush import webpush, WebPushException
+        webpush(subscription_info=subscription,
+                data=json.dumps({"kind":"BTC_V5_TEST","title":"BTC Swing V5"}),
+                vapid_private_key=private_key,
+                vapid_claims={"sub":subject}, ttl=120, timeout=10)
+    except Exception as exc:
+        # Do not echo endpoint, user keys, URL or provider error to clients.
+        from fastapi import HTTPException
+        raise HTTPException(status_code=502, detail="Push provider unavailable") from None
+    return {"accepted":True}
