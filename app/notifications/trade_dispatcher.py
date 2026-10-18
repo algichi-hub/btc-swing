@@ -39,11 +39,20 @@ def drain_real_events(limit=10):
             if db.execute("SELECT now()>=%s AS expired",(event["expires_at"],)).fetchone()["expired"]:
                 db.execute("UPDATE v5_push_outbox SET status='EXPIRED',updated_at=now() WHERE id=%s",(event["id"],))
                 continue
-            subscriptions=db.execute("""SELECT id,endpoint_ciphertext,p256dh_ciphertext,auth_ciphertext
-                FROM v5_push_subscriptions WHERE active=true""").fetchall()
-            for sub in subscriptions:
-                db.execute("""INSERT INTO v5_push_deliveries(event_id,subscription_id)
-                    VALUES (%s,%s) ON CONFLICT DO NOTHING""",(event["id"],sub["id"]))
+            # Snapshot recipients only on initial dispatch. Do not enroll new
+            # devices into old events when an earlier delivery is retried.
+            if int(event["attempts"]) == 0:
+                subscriptions=db.execute("""SELECT id FROM v5_push_subscriptions
+                    WHERE active=true""").fetchall()
+                for sub in subscriptions:
+                    db.execute("""INSERT INTO v5_push_deliveries(event_id,subscription_id)
+                        VALUES (%s,%s) ON CONFLICT DO NOTHING""",(event["id"],sub["id"]))
+            # A revoked subscription is terminal, not a permanently pending row.
+            db.execute("""UPDATE v5_push_deliveries d SET state='EXPIRED',
+                last_error_code='SUBSCRIPTION_REVOKED'
+                FROM v5_push_subscriptions s
+                WHERE d.event_id=%s AND d.subscription_id=s.id
+                  AND d.state='PENDING' AND s.active=false""",(event["id"],))
             # Pending deliveries are retryable; SENT/EXPIRED are terminal.
             pending=db.execute("""SELECT d.subscription_id,d.attempts,s.endpoint_ciphertext,
                  s.p256dh_ciphertext,s.auth_ciphertext
@@ -51,7 +60,6 @@ def drain_real_events(limit=10):
                  JOIN v5_push_subscriptions s ON s.id=d.subscription_id
                  WHERE d.event_id=%s AND d.state='PENDING' AND s.active=true
                  ORDER BY d.subscription_id FOR UPDATE OF d""",(event["id"],)).fetchall()
-            transient=False
             for sub in pending:
                 next_attempt=int(sub["attempts"])+1
                 state="PENDING";code=None
@@ -67,7 +75,7 @@ def drain_real_events(limit=10):
                     elif next_attempt>=MAX_ATTEMPTS:
                         state="FAILED";code="RETRY_EXHAUSTED"
                     else:
-                        transient=True;code="PUSH_TRANSIENT"
+                        code="PUSH_TRANSIENT"
                     LOG.warning("Trade Push transport %s (attempt %s)",code or "FAILED",next_attempt)
                 db.execute("""UPDATE v5_push_deliveries SET state=%s,attempts=%s,
                     last_error_code=%s,delivered_at=CASE WHEN %s='SENT' THEN now() ELSE delivered_at END
