@@ -572,7 +572,9 @@ def market_snapshot() -> dict:
 
 @viewer_router.get("/settings")
 def get_app_settings() -> dict[str, Any]:
-    return settings_service.get_all()
+    values = settings_service.get_all()
+    # V5 cloud no longer exposes retired recap scheduling preferences.
+    return {key: value for key, value in values.items() if key not in ("pnl_recap_weekday", "pnl_recap_time")}
 
 
 @admin_router.put("/settings")
