@@ -43,3 +43,12 @@
 No aplicar `docs/F6_G6_EVIDENCE.json` con PASS especulativos: permanece todo en PENDING hasta asociar evidencias verificadas. En particular, no promover `develop/f6-release-hardening` a main, no tocar Raspberry V4, no ejecutar LIVE y no borrar Telegram compartido sin estrategia de compatibilidad.
 
 **Próximo bloque necesario antes de G6 GO:** E2E autenticado G4 (admin/viewer/logout/MFA), inyección SIGKILL mid-write con snapshots G3, E2E Push desde F6 y ensayo del runbook rollback. Tras esos resultados, revisar aceptación literal de Telegram y aprobar formalmente la promoción.
+
+## Verificación posterior: rutas Telegram y middleware HTTP
+- La primera comprobación `GET /api/telegram/status == 404` falló porque el middleware rechaza primero acceso sin sesión, devolviendo 401. La ruta POST `/api/telegram/test` sí aparecía registrada (GET=405), por lo que la retirada por filtrado posterior de routers anidados era incompleta.
+- Se corrigió **en la implementación**, eliminando los decoradores de `/telegram/status` y `/telegram/test` en `app/main.py` F6. El contrato con el algoritmo permanece inalterado.
+- Prueba CI específica verifica que ambos decoradores ya no figuran en el registro fuente y que el antiguo endpoint diferido tampoco está disponible. El smoke HTTP permite 401 por middleware o 404 por ruta inexistente (no confundir 401 con evidencia de inexistencia), y comprueba que la ruta GET Telegram test ya no responde 405.
+- Commit fuente validado `9f5ce987ef8e28ebdfe95d0ebb302342b7b65332`. API Preview `77504597-05b0-44ca-960d-69650de1d6f4` SUCCESS.
+- GitHub: F6 security smoke `39168434658` **SUCCESS** tras reejecutar `railway-negative-smoke` contra API F6 ya desplegada; suite `security-static` SUCCESS. El run inicial anterior al deploy había fallado y no debe considerarse evidencia final.
+- Aún **no** se han validado los flujos G4 autenticados reales ni SIGKILL mid-write G3 ni ensayado rollback completo. La eliminación literal del módulo Telegram compartido con V4 tampoco está concluida.
+- **Decisión G6 sigue NO-GO para Production**, aunque la candidata F6 Preview cumple CI y smoke HTTP disponibles.
