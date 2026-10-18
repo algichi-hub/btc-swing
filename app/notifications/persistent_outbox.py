@@ -66,10 +66,12 @@ def enqueue_real_trade_events(*, lookback_days: int = 7) -> int:
         raise ValueError("invalid lookback")
     if __import__("os").getenv("PUSH_REAL_EVENTS_ENABLED") != "true":
         return 0
+    since=__import__("os").getenv("PUSH_REAL_EVENTS_SINCE")
+    if not since: return 0
     with connect_pg() as db:
         rows=db.execute("""SELECT id,event_type FROM trade_events
-            WHERE event_at::timestamptz >= now()-(%s * interval '1 day')
-            ORDER BY id LIMIT 10000""",(lookback_days,)).fetchall()
+            WHERE event_at::timestamptz >= %s::timestamptz
+            ORDER BY id LIMIT 10000""",(since,)).fetchall()
         added=0
         for row in rows:
             kind=str(row["event_type"]).upper()
@@ -80,4 +82,24 @@ def enqueue_real_trade_events(*, lookback_days: int = 7) -> int:
                 VALUES(%s,'TRADE_EVENT',%s::jsonb,'PENDING',now()+interval '24 hours')
                 ON CONFLICT(event_key) DO NOTHING""",(key,__import__("json").dumps({"kind":"TRADE_EVENT","event":kind,"title":"BTC Swing V5"})))
             added+=int(c.rowcount==1)
+    return added
+
+def enqueue_real_trade_signals() -> int:
+    """Announce new paper trade entries once; never place or alter an order."""
+    import os,json
+    since=os.getenv("PUSH_REAL_EVENTS_SINCE")
+    if os.getenv("PUSH_REAL_EVENTS_ENABLED")!="true" or not since: return 0
+    with connect_pg() as db:
+        rows=db.execute("""SELECT id FROM trade_signals
+            WHERE created_at::timestamptz >= %s::timestamptz
+            AND status='OPEN' ORDER BY id LIMIT 10000""",(since,)).fetchall()
+        added=0
+        for row in rows:
+            key=hashlib.sha256(("trade-signal:v1:"+str(row["id"])).encode()).hexdigest()
+            result=db.execute("""INSERT INTO v5_push_outbox
+                (event_key,kind,public_payload,status,expires_at)
+                VALUES (%s,'TRADE_EVENT',%s::jsonb,'PENDING',now()+interval '24 hours')
+                ON CONFLICT(event_key) DO NOTHING""",(key,json.dumps({
+                    "kind":"TRADE_EVENT","event":"OPEN","title":"BTC Swing V5"})))
+            added+=int(result.rowcount==1)
     return added
