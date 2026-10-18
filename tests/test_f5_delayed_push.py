@@ -32,7 +32,7 @@ def test_delayed_rate_limit(monkeypatch):
 def test_delay_is_server_side_and_fixed():
     from pathlib import Path
     code=Path("app/notifications/delayed_test.py").read_text()
-    assert "interval '120 seconds'" in code
+    assert "interval '30 seconds'" in code
     assert "FOR UPDATE SKIP LOCKED" in code
     assert "active=true" in code
     assert '"BTC_V5_TEST"' in code
