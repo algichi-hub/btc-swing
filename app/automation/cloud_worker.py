@@ -131,6 +131,14 @@ def run_once(run_engine: Callable[[], object], *, now: datetime | None = None) -
                 conn.execute('''UPDATE worker_cycles SET status='OK',error_code=NULL,
                                 duration_ms=%s,completed_at=now() WHERE cycle_key=%s''',
                              (elapsed,key))
+            # Publish already-committed trade events; trading success is independent
+            # of notification delivery and no algorithm method is modified.
+            if os.getenv('PUSH_REAL_EVENTS_ENABLED') == 'true':
+                try:
+                    from app.notifications.persistent_outbox import enqueue_real_trade_events
+                    enqueue_real_trade_events()
+                except Exception as exc:
+                    _LOG.warning('F5 trade outbox failure: %s', type(exc).__name__)
             # F5 shadow-only audit: after committed OK, never enters trading decision path.
             if os.getenv('PUSH_SHADOW_EVENTS_ENABLED','false').lower() == 'true':
                 try:
