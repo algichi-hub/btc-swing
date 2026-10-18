@@ -13,3 +13,9 @@
 - Evidencia CI de validación de integración específica: [security smoke 39127178180](https://github.com/algichi-hub/btc-swing/actions/runs/39127178180) SUCCESS; CI baseline automática [39127178186](https://github.com/algichi-hub/btc-swing/actions/runs/39127178186) SUCCESS. **La regresión formal de salida G5 no se ha ejecutado**.
 - Verificación Neon a las 12:28 UTC: 0 filas CYCLE_SHADOW observadas tras despliegue (siguiente slot posterior pendiente). **Step 4 desplegado pero test de persistencia end-to-end PENDING**, no declarar cierre hasta dato de nuevo ciclo.
 - No se tocaron Production, Raspberry V4 ni eventos reales de notificaciones. F5 Preview conserva Web Push manual probado por el usuario. G3/G4/G5 mantienen sus gates previos.
+
+### Extensión de paso 4 y verificación — 2026-10-18
+- Se ha añadido lectura limitada (máximo 100 registros por ciclo, lookback 15 minutos) de `trade_events` para generar `TRADE_EVENT_SHADOW` con digest de ID y `public_payload={}`, `status=SENT`. Estos registros jamás son enviados por el dispatcher. No se afecta a `trade_events` ni a `trade_signals`.
+- Worker Preview actualizado a commit `471ce5bb8a63c0905affedca891d50b1ce5a9ab2` (Railway `b25a2f56-7235-4108-9f22-3cd0fb7c7386` SUCCESS). Compatibilidad/smoke GitHub Actions: `39127538770` SUCCESS, `39127538906` SUCCESS.
+- A las 12:32 UTC, consulta Neon: **0 filas CYCLE_SHADOW**, último ciclo OK 12:30:16 UTC; queda pendiente observar siguiente ciclo tras último despliegue. No atribuir falso PASS E2E.
+- Emisión automática de eventos operativos reales y dispatcher con Web Push automático **NO ACTIVADOS** por condición explícita `PUSH_DISPATCHER_REAL_SEND=false` hasta verificación y aprobación de G3/G4.
