@@ -99,3 +99,9 @@
 - GitHub CI tras últimas correcciones: baseline `39159522501` SUCCESS y security smoke `39159522510` SUCCESS. Código `bfd912ebe54666e33c724320f6408e51cb553cb8`, dispatcher en redeploy Preview `c1b55d78-cba2-46e7-b41a-a0c90589317f`.
 - Neon actual (19:35 UTC): 0 TRADE_EVENT PENDING, 0 deliveries PENDING, 2 TRADE_EVENT SENT, 1 dispositivo activo; worker último ciclo OK 19:30:14 UTC. No se han creado trades ni alterado estrategia, Production/Raspberry intactas.
 - **Decisión:** GO para pruebas funcionales de Web Push F5 en Preview y aceptación de E2E sintético. **G5 definitivo sigue NO-GO**: aún sin ensayo real de interrupción mid-write (G3), RBAC VIEWER/logout-cookie/CSRF autenticados completos (G4), prueba física de revocación/offline-recovery post-logout y paridad natural de señal del motor. No inferir que las pruebas simuladas satisfacen dichos gates.
+
+## Recuperación de proceso tras redeploy — 18-10-2026 21:40 CEST
+- El dispatcher Preview quedó en estado SUCCESS después del despliegue `c1b55d78-cba2-46e7-b41a-a0c90589317f`, commit `bfd912ebe54666e33c724320f6408e51cb553cb8`. Se invocó reinicio controlado del servicio y el despliegue permanece SUCCESS; no se reinició Neon ni la API.
+- Neon comprobado a las 19:40:14Z: outbox PENDING=0, entregas PENDING=0, un dispositivo activo, worker último OK 19:35:15Z.
+- CI última revisión: F5 security smoke `39159522510` SUCCESS; F0 baseline `39159522501` SUCCESS. Incluyen tests dinámicos simulados de 429/503, 410, revocación, agotamiento de intentos y TTL.
+- **Limitación:** reiniciar un dispatcher en reposo no demuestra recuperación tras caída entre envío externo y commit ni SIGKILL mid-write del engine; tampoco sustituye E2E autenticada VIEWER/CSRF/logout ni revocación/denegación en Android. **No se ha alcanzado G5 GO formal**, pues la matriz original requiere además cerrar G3/G4 y retirada efectiva de Telegram. No promover main/Production ni retirar todavía el botón temporal.
