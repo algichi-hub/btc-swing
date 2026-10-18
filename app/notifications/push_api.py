@@ -133,15 +133,3 @@ def send_test_push(body:PushTestRequest,user=Depends(get_current_user)):
         raise HTTPException(status_code=502, detail="Push provider unavailable") from None
     return {"accepted":True}
 
-@router.post("/test-delayed", dependencies=[Depends(verify_csrf_origin),Depends(verify_csrf_token)])
-def schedule_delayed_push(body:PushTestRequest,user=Depends(get_current_user)):
-    """Temporary opt-in 120-second delivery to one owned, active subscription."""
-    if not _enabled() or os.getenv("PUSH_TEST_ENABLED")!="true" or os.getenv("PUSH_DELAYED_TEST_ENABLED")!="true":
-        raise HTTPException(status_code=503,detail="Delayed push test disabled")
-    from app.notifications.delayed_test import schedule
-    try:
-        return schedule(user.id,body.id)
-    except LookupError:
-        raise HTTPException(status_code=404,detail="Device not found") from None
-    except RuntimeError:
-        raise HTTPException(status_code=429,detail="Wait before scheduling another test") from None
