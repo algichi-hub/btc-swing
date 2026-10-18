@@ -917,6 +917,14 @@ def create_app(app_env: str | None = None) -> FastAPI:
     application.include_router(public_router)
     application.include_router(viewer_router)
     application.include_router(admin_router)
+    # Cloud V5 does not expose Telegram routes. The V4/local app retains its
+    # legacy API without changing the shared (golden-hashed) strategy.
+    if os.getenv('BTC_PROCESS_ROLE') == 'api':
+        application.router.routes[:] = [
+            route for route in application.router.routes
+            if not str(getattr(route, 'path', '')).startswith('/api/telegram/')
+        ]
+        application.openapi_schema = None
     return application
 
 
