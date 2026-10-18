@@ -584,6 +584,12 @@ def update_app_settings(payload: SettingsUpdatePayload) -> dict[str, Any]:
         updates = payload.model_dump(exclude_unset=True)
         recap_changed = "pnl_recap_weekday" in updates or "pnl_recap_time" in updates
 
+        # In cloud Preview the API has no scheduler; settings are persisted only.
+        # Never reschedule the legacy Telegram cron or write engine_runtime_state
+        # from the least-privilege API role.
+        if os.environ.get("BTC_PROCESS_ROLE") == "api":
+            return settings_service.update_many(updates)
+
         if recap_changed:
             previous_settings = settings_service.get_all()
             rollback_payload = {k: previous_settings[k] for k in updates if k in previous_settings}
@@ -719,6 +725,31 @@ def get_setup_history(setup_id: str) -> dict[str, Any]:
 
 @viewer_router.get("/automation/status")
 def automation_status() -> dict[str, bool | int | str | None]:
+    if os.environ.get("BTC_PROCESS_ROLE") == "api" and os.environ.get("BTC_DB_BACKEND") == "postgres":
+        from app.automation.cloud_worker import get_worker_health, INTERVAL_SECONDS
+        info = get_worker_health()
+        last_success = info.get("last_success_at")
+        running = info.get("status") == "OK" and info.get("age_seconds", 1e9) < 660
+        next_slot = None
+        if running:
+            now = datetime.now(timezone.utc)
+            slot = (int(now.timestamp()) // INTERVAL_SECONDS + 1) * INTERVAL_SECONDS
+            next_slot = datetime.fromtimestamp(slot, tz=timezone.utc).isoformat()
+        configured = settings_service.get_all()
+        time_str = str(configured["pnl_recap_time"])
+        return {
+            "running": running,
+            "interval_seconds": INTERVAL_SECONDS,
+            "last_market_cycle_at": last_success,
+            "next_market_cycle_at": next_slot,
+            "last_cycle_success": info.get("status") == "OK",
+            "last_cycle_error": None if info.get("status") == "OK" else "WORKER_UNAVAILABLE",
+            "daily_summary_time": f"{settings.telegram_daily_report_hour:02d}:{settings.telegram_daily_report_minute:02d}",
+            "pnl_recap_weekday": configured["pnl_recap_weekday"],
+            "pnl_recap_time": time_str,
+            "timezone": settings.telegram_timezone,
+            "is_stale": not running,
+        }
     scheduler_status = automation_scheduler.market_cycle_status()
 
     last_market_cycle_at = trade_repository.get_runtime_state(RUNTIME_LAST_MARKET_CYCLE_AT_KEY)
