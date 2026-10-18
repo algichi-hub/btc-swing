@@ -315,21 +315,6 @@ class SettingsService:
         if candidate == "":
             raise SettingsValidationError(f"{key} must not be empty")
 
-        if key == PNL_RECAP_WEEKDAY:
-            candidate_upper = candidate.upper()
-            if candidate_upper not in VALID_PNL_RECAP_WEEKDAYS:
-                allowed = ", ".join(VALID_PNL_RECAP_WEEKDAYS)
-                raise SettingsValidationError(f"{key} must be one of: {allowed}")
-            return candidate_upper
-
-        if key == PNL_RECAP_TIME:
-            match = re.match(r"^([01]\d|2[0-3]):[0-5]\d$", candidate)
-            if not match:
-                raise SettingsValidationError(
-                    f"{key} must be a valid 24h time in HH:MM format between 00:00 and 23:59"
-                )
-            return candidate
-
         if spec.allowed_values and candidate not in spec.allowed_values:
             allowed = ", ".join(spec.allowed_values)
             raise SettingsValidationError(f"{key} must be one of: {allowed}")
