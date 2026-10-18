@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BTC Swing Trade</title>
   <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="manifest" href="/static/manifest.webmanifest" />
+  <meta name="theme-color" content="#101827" />
 </head>
 <body>
   <main class="shell">
@@ -271,26 +273,6 @@
             <p class="field-help">Multiplicador mínimo sobre la mediana de volumen horario requerido para confirmar el trade en la vela 1H (1.05 = +5%).</p>
           </div>
 
-          <div class="form-field">
-            <label for="pnl-recap-weekday">Recap semanal de PnL — Día</label>
-            <select id="pnl-recap-weekday" name="pnl_recap_weekday" class="settings-select">
-              <option value="MONDAY">Lunes</option>
-              <option value="TUESDAY">Martes</option>
-              <option value="WEDNESDAY">Miércoles</option>
-              <option value="THURSDAY">Jueves</option>
-              <option value="FRIDAY">Viernes</option>
-              <option value="SATURDAY">Sábado</option>
-              <option value="SUNDAY">Domingo</option>
-            </select>
-            <p class="field-help">Día de la semana programado para el envío del resumen semanal de PnL por Telegram.</p>
-          </div>
-
-          <div class="form-field">
-            <label for="pnl-recap-time">Recap semanal de PnL — Hora</label>
-            <input id="pnl-recap-time" name="pnl_recap_time" type="time" required value="05:00" />
-            <p class="field-help">Hora local programada para el envío del resumen semanal de PnL (formato 24 horas HH:MM).</p>
-          </div>
-
           <button id="save-settings" class="save-button" type="submit">Guardar ajustes</button>
           <p id="settings-feedback" class="form-feedback" aria-live="polite"></p>
         </form>
@@ -362,6 +344,14 @@
         </section>
 
         <!-- Sección de Mantenimiento / Reset al final de Ajustes debajo de Telegram -->
+        <section class="database-maintenance" aria-label="Notificaciones Push" id="push-settings">
+          <h3>NOTIFICACIONES PUSH</h3>
+          <p class="maintenance-description">Activa notificaciones de prueba en este dispositivo. Los permisos se solicitan solo al pulsar Activar.</p>
+          <p id="push-feedback" role="status">Comprobando disponibilidad…</p>
+          <button id="push-enable" type="button" class="btn-submit">Activar en este dispositivo</button>
+          <button id="push-refresh" type="button">Actualizar dispositivos</button>
+          <ul id="push-devices" class="modal-list"></ul>
+        </section>
         <section class="database-maintenance" aria-labelledby="database-maintenance-title">
           <h3 id="database-maintenance-title">BASE DE DATOS</h3>
           <p class="maintenance-description">Mantenimiento y reset de datos operativos e históricos.</p>
@@ -409,5 +399,6 @@
   </nav>
 
   <script src="/static/app.js"></script>
+  <script src="/static/pwa-install.js" defer></script>
 </body>
 </html>
