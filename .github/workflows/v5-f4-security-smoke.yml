@@ -49,4 +49,10 @@ jobs:
           done
           test "$(code -X POST -H 'Content-Type: application/json' --data '{}' "$API/api/auth/login")" = "403"
           test "$(code -X POST -H 'Origin: https://untrusted.invalid' -H 'Content-Type: application/json' --data '{}' "$API/api/auth/login")" = "403"
-          echo 'PASS: health 200, private APIs 401, malicious/missing Origin 403'
+          for path in /api/push/config /api/push/devices; do
+            test "$(code "$API$path")" = "401"
+          done
+          for path in /api/push/subscribe /api/push/test /api/push/revoke; do
+            test "$(code -X POST -H 'Origin: https://untrusted.invalid' -H 'Content-Type: application/json' --data '{}' "$API$path")" = "403"
+          done
+          echo 'PASS: health 200, private APIs 401, malicious/missing Origin 403, Web Push route protections'
