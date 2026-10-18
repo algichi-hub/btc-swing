@@ -191,6 +191,8 @@ def main() -> None:
         raise RuntimeError('Worker requires BTC_DB_BACKEND=postgres')
     if os.getenv('BTC_LIVE_TRADING', '').lower() not in ('','0','false','off','no'):
         raise RuntimeError('Live orders are forbidden during F3')
+    from app.release_guard import enforce_cloud_isolation
+    enforce_cloud_isolation(role='worker')
     cycle = _build_engine()
     stop = False
     def on_shutdown(signum, frame):
