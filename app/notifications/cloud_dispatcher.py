@@ -41,11 +41,8 @@ def main():
     from app.release_guard import enforce_cloud_isolation
     enforce_cloud_isolation(role='push_dispatcher')
     from app.notifications.trade_dispatcher import drain_real_events
-    from app.notifications.delayed_test import drain_delayed_tests
     while True:
         try:
-            if os.getenv('PUSH_DELAYED_TEST_ENABLED')=='true':
-                drain_delayed_tests()
             drain_once()
             if os.getenv("PUSH_REAL_EVENTS_ENABLED")=="true":
                 drain_real_events()
