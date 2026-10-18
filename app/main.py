@@ -90,8 +90,6 @@ class SettingsUpdatePayload(BaseModel):
     pnl_chart_days: int | None = None
     volume_baseline_period: int | None = None
     volume_confirmation_threshold: float | None = None
-    pnl_recap_weekday: str | None = None
-    pnl_recap_time: str | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -582,34 +580,6 @@ def get_app_settings() -> dict[str, Any]:
 def update_app_settings(payload: SettingsUpdatePayload) -> dict[str, Any]:
     try:
         updates = payload.model_dump(exclude_unset=True)
-        recap_changed = "pnl_recap_weekday" in updates or "pnl_recap_time" in updates
-
-        # In cloud Preview the API has no scheduler; settings are persisted only.
-        # Never reschedule the legacy Telegram cron or write engine_runtime_state
-        # from the least-privilege API role.
-        if os.environ.get("BTC_PROCESS_ROLE") == "api":
-            return settings_service.update_many(updates)
-
-        if recap_changed:
-            previous_settings = settings_service.get_all()
-            rollback_payload = {k: previous_settings[k] for k in updates if k in previous_settings}
-            saved = settings_service.update_many(updates)
-            try:
-                automation_scheduler.reschedule_pnl_recap(
-                    weekday=updates.get("pnl_recap_weekday"),
-                    time_str=updates.get("pnl_recap_time"),
-                )
-            except Exception as exc:
-                try:
-                    settings_service.update_many(rollback_payload)
-                except Exception:
-                    pass
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Failed to reschedule recap trigger: {exc}",
-                ) from exc
-            return saved
-
         return settings_service.update_many(updates)
     except SettingsValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -735,8 +705,6 @@ def automation_status() -> dict[str, bool | int | str | None]:
             now = datetime.now(timezone.utc)
             slot = (int(now.timestamp()) // INTERVAL_SECONDS + 1) * INTERVAL_SECONDS
             next_slot = datetime.fromtimestamp(slot, tz=timezone.utc).isoformat()
-        configured = settings_service.get_all()
-        time_str = str(configured["pnl_recap_time"])
         return {
             "running": running,
             "interval_seconds": INTERVAL_SECONDS,
@@ -745,8 +713,6 @@ def automation_status() -> dict[str, bool | int | str | None]:
             "last_cycle_success": info.get("status") == "OK",
             "last_cycle_error": None if info.get("status") == "OK" else "WORKER_UNAVAILABLE",
             "daily_summary_time": f"{settings.telegram_daily_report_hour:02d}:{settings.telegram_daily_report_minute:02d}",
-            "pnl_recap_weekday": configured["pnl_recap_weekday"],
-            "pnl_recap_time": time_str,
             "timezone": settings.telegram_timezone,
             "is_stale": not running,
         }
@@ -763,12 +729,6 @@ def automation_status() -> dict[str, bool | int | str | None]:
     else:
         stale = (datetime.now(timezone.utc) - parsed_last_cycle) > timedelta(minutes=10)
 
-    get_schedule = getattr(automation_scheduler, "get_recap_schedule", None)
-    if get_schedule is not None:
-        recap_weekday, recap_hour, recap_minute = get_schedule()
-    else:
-        recap_weekday, recap_hour, recap_minute = "SUNDAY", 5, 0
-
     return {
         "running": bool(scheduler_status["running"]),
         "interval_seconds": int(scheduler_status["interval_seconds"]),
@@ -777,8 +737,6 @@ def automation_status() -> dict[str, bool | int | str | None]:
         "last_cycle_success": last_cycle_success,
         "last_cycle_error": last_cycle_error,
         "daily_summary_time": f"{settings.telegram_daily_report_hour:02d}:{settings.telegram_daily_report_minute:02d}",
-        "pnl_recap_weekday": recap_weekday,
-        "pnl_recap_time": f"{recap_hour:02d}:{recap_minute:02d}",
         "timezone": settings.telegram_timezone,
         "is_stale": stale,
     }
