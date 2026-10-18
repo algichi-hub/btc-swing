@@ -37,6 +37,9 @@ def drain_real_events(limit=10):
             LIMIT %s FOR UPDATE SKIP LOCKED""",(limit,)).fetchall()
         for event in events:
             if db.execute("SELECT now()>=%s AS expired",(event["expires_at"],)).fetchone()["expired"]:
+                db.execute("""UPDATE v5_push_deliveries SET state='EXPIRED',
+                    last_error_code='EVENT_EXPIRED'
+                    WHERE event_id=%s AND state='PENDING'""",(event["id"],))
                 db.execute("UPDATE v5_push_outbox SET status='EXPIRED',updated_at=now() WHERE id=%s",(event["id"],))
                 continue
             # Snapshot recipients only on initial dispatch. Do not enroll new
