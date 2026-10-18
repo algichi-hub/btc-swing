@@ -364,6 +364,14 @@
         </section>
 
         <!-- Sección de Mantenimiento / Reset al final de Ajustes debajo de Telegram -->
+        <section class="database-maintenance" aria-label="Notificaciones Push" id="push-settings">
+          <h3>NOTIFICACIONES PUSH</h3>
+          <p class="maintenance-description">Activa notificaciones de prueba en este dispositivo. Los permisos se solicitan solo al pulsar Activar.</p>
+          <p id="push-feedback" role="status">Comprobando disponibilidad…</p>
+          <button id="push-enable" type="button" class="btn-submit">Activar en este dispositivo</button>
+          <button id="push-refresh" type="button">Actualizar dispositivos</button>
+          <ul id="push-devices" class="modal-list"></ul>
+        </section>
         <section class="database-maintenance" aria-labelledby="database-maintenance-title">
           <h3 id="database-maintenance-title">BASE DE DATOS</h3>
           <p class="maintenance-description">Mantenimiento y reset de datos operativos e históricos.</p>
