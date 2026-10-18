@@ -38,7 +38,10 @@ def test_cloud_route_registry_excludes_telegram_and_delayed_push(monkeypatch):
     monkeypatch.setenv("BTC_LIVE_TRADING","false")
     monkeypatch.setenv("PUSH_DELAYED_TEST_ENABLED","false")
     cloud=create_app()
-    paths={route.path for route in cloud.routes}
+    paths={getattr(route,"path",None) for route in cloud.routes}
+    source=__import__("pathlib").Path("app/main.py").read_text()
+    assert '@viewer_router.get("/telegram/status")' not in source
+    assert '@admin_router.post("/telegram/test")' not in source
     assert "/api/telegram/status" not in paths
     assert "/api/telegram/test" not in paths
     assert "/api/push/test-delayed" not in paths
