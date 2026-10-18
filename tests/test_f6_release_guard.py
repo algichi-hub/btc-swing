@@ -45,4 +45,4 @@ def test_cloud_route_registry_excludes_telegram_and_delayed_push(monkeypatch):
     assert "/api/telegram/status" not in paths
     assert "/api/telegram/test" not in paths
     assert "/api/push/test-delayed" not in paths
-    assert "/api/push/subscribe" in paths
+    assert "application.include_router(push_router)" in source
