@@ -13,7 +13,7 @@ def test_manifest_scoped_login_not_private_cache():
     assert {icon["sizes"] for icon in m["icons"]} >= {"192x192","512x512"}
     for n in (192,512):
         raw=(ROOT/f"icon-{n}.png").read_bytes()
-        assert raw[:8]==b"\\x89PNG\\r\\n\\x1a\\n"
+        assert raw[:8]==bytes.fromhex("89504e470d0a1a0a")
         assert int.from_bytes(raw[16:20],"big")==n
     for p in ("login.html","index.html"):
         page=(ROOT/p).read_text()
