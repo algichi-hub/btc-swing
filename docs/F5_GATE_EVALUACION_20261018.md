@@ -44,3 +44,12 @@
 - Evidencia funcional aportada por el usuario: Chrome Android **instala** la PWA F5 y el smartphone **recibe correctamente** notificaciones Web Push de prueba enviadas desde la aplicación. Marcar **PASS funcional reportado por usuario** para instalación y entrega manual de prueba; no atribuir a CI ni a logs un ensayo en dispositivo que no han ejecutado.
 - Pendientes de ensayo: PWA cerrada y pantalla bloqueada, persistencia tras reinicio, revocación real, deduplicación/caídas, logout/offline/caché, integración automática con señales, paridad con Telegram y pruebas G3/G4 residuales.
 - G5 sigue **NO-GO de cierre**; F5 Preview queda **GO a validación extendida** sin promover Production.
+
+## Validación retomada tras eliminación del recap — 18-10-2026, ~16:43 CEST
+
+- Último commit probado y desplegado en API/Engine: `f2784facee2ea49ce1f471a281cadbee6b15cef8`; CI baseline `39133670327` SUCCESS y smoke F5 `39133670133` SUCCESS.
+- Los tres servicios (API, Engine, Dispatcher dry-run) permanecían SUCCESS en Railway Preview. Neon Preview confirma 1 suscripción activa, heartbeat del worker OK, sin eventos pendientes.
+- **Incidencia detectada en Shadow:** 0 `CYCLE_SHADOW` con 12 ciclos del worker OK en última hora; logs muestran `F5 shadow outbox unavailable; trading cycle unaffected` tras cada ciclo. Diagnóstico: SQL de inserción de sombra hacía `RETURNING id` y el rol restringido del worker tenía INSERT/USAGE pero no SELECT en la columna.
+- **Remediación aplicada:** `app/notifications/persistent_outbox.py` usa `cursor.rowcount` tras `ON CONFLICT DO NOTHING`, sin `RETURNING` ni nuevos privilegios. Test de prevención incorporado. Commit `89df89001dbac357ccfbe571a79884b4e736b61c`, CI F5 `39137108892` SUCCESS y baseline `39137108815` SUCCESS; worker Railway Preview deploy `54aba011-8e64-451f-906c-6d8277315b0b` SUCCESS.
+- A las 14:43 UTC todavía no había ocurrido el siguiente slot 14:45 posterior a ese despliegue; prueba E2E de evento `CYCLE_SHADOW` **PENDIENTE**, no marcar PASS antes de observar una fila real.
+- **Decisión G5: NO-GO de cierre.** Falta dispatcher real persistente y resistente a fallos (actualmente dry-run), pruebas de entrega con app cerrada/pantalla bloqueada/reinicio, revocación, seguridad de sesión autenticada, y cierre G3/G4. Push manual en Android ya fue confirmado PASS por el usuario. Production y Raspberry intactas.
