@@ -9,7 +9,16 @@ ROOT=Path("app/static")
 def test_manifest_scoped_login_not_private_cache():
     m=json.loads((ROOT/"manifest.webmanifest").read_text())
     assert m["scope"]=="/" and m["start_url"]=="/login" and m["display"]=="standalone"
-    assert m["icons"] and m["icons"][0]["src"]=="/static/icon.svg"
+    assert m["icons"] and m["id"]=="/"
+    assert {icon["sizes"] for icon in m["icons"]} >= {"192x192","512x512"}
+    for n in (192,512):
+        raw=(ROOT/f"icon-{n}.png").read_bytes()
+        assert raw[:8]==b"\\x89PNG\\r\\n\\x1a\\n"
+        assert int.from_bytes(raw[16:20],"big")==n
+    for p in ("login.html","index.html"):
+        page=(ROOT/p).read_text()
+        assert 'rel="manifest"' in page
+        assert '/static/pwa-install.js' in page
 def test_worker_never_caches_private_data():
     text=(ROOT/"sw.js").read_text()
     assert "caches.delete(key)" in text
@@ -34,3 +43,9 @@ def test_retries_and_ttl():
 def test_reject_sensitive_payload():
     with pytest.raises(ValueError):
         SimulatedOutbox().enqueue("a","TEST",{"wallet":"secret"})
+
+
+def test_worker_root_scope_has_real_file_not_self_rewrite():
+    v=json.loads((ROOT/"vercel.json").read_text())
+    assert not any(r["source"]=="/sw.js" for r in v["rewrites"])
+    assert "navigator.serviceWorker.register('/sw.js'" in (ROOT/"pwa-install.js").read_text()
