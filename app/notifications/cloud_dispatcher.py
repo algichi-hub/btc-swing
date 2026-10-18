@@ -44,6 +44,6 @@ def main():
                 drain_delayed_tests()
             drain_once()
         except Exception:LOG.exception("dispatcher dryrun failed")
-        time.sleep(60)
+        time.sleep(5)
 
 if __name__=="__main__":main()
