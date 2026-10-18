@@ -13,11 +13,11 @@ def record_shadow_cycle(cycle_key: str) -> bool:
         raise ValueError("invalid cycle key")
     key=hashlib.sha256(("shadow:v1:"+cycle_key).encode()).hexdigest()
     with connect_pg() as db:
-        row=db.execute("""INSERT INTO v5_push_outbox
+        cursor=db.execute("""INSERT INTO v5_push_outbox
           (event_key,kind,public_payload,status,expires_at)
           VALUES (%s,'CYCLE_SHADOW','{}'::jsonb,'SENT',now()+interval '24 hours')
-          ON CONFLICT(event_key) DO NOTHING RETURNING id""",(key,)).fetchone()
-    return row is not None
+          ON CONFLICT(event_key) DO NOTHING""",(key,))
+    return cursor.rowcount == 1
 
 def enqueue_synthetic_test(event_key: str, ttl_minutes:int=10) -> bool:
     """Only opted-in synthetic test events, never engine decisions."""
@@ -29,7 +29,7 @@ def enqueue_synthetic_test(event_key: str, ttl_minutes:int=10) -> bool:
         (event_key,kind,public_payload,status,expires_at)
         VALUES (%s,'BTC_V5_TEST','{"kind":"BTC_V5_TEST","title":"BTC Swing V5"}'::jsonb,
                 'PENDING',now()+(%s * interval '1 minute'))
-        ON CONFLICT(event_key) DO NOTHING RETURNING id""",(key,ttl_minutes)).fetchone()
+        ON CONFLICT(event_key) DO NOTHING""",(key,ttl_minutes))
     return row is not None
 
 def mirror_recent_trade_events(*, lookback_minutes: int = 15) -> int:
@@ -51,6 +51,6 @@ def mirror_recent_trade_events(*, lookback_minutes: int = 15) -> int:
                  (event_key,kind,public_payload,status,expires_at)
                  VALUES (%s,'TRADE_EVENT_SHADOW','{}'::jsonb,'SENT',
                    now()+interval '24 hours')
-                 ON CONFLICT(event_key) DO NOTHING RETURNING id""",(key,)).fetchone()
-            inserted+=int(created is not None)
+                 ON CONFLICT(event_key) DO NOTHING""",(key,))
+            inserted+=int(created.rowcount == 1)
     return inserted
