@@ -35,15 +35,19 @@ def main():
         raise RuntimeError("dispatcher role required")
     if os.getenv("BTC_DB_BACKEND")!="postgres":
         raise RuntimeError("Postgres required")
-    if os.getenv("PUSH_DISPATCHER_REAL_SEND","false").lower()=="true":
-        raise RuntimeError("G3/G4 release gate: real automated push disabled")
+    if os.getenv("PUSH_DISPATCHER_REAL_SEND","false").lower()=="true" and os.getenv("PUSH_REAL_EVENTS_ENABLED")!="true":
+        raise RuntimeError("Real dispatcher requires explicit event gate")
+    from app.notifications.trade_dispatcher import drain_real_events
     from app.notifications.delayed_test import drain_delayed_tests
     while True:
         try:
             if os.getenv('PUSH_DELAYED_TEST_ENABLED')=='true':
                 drain_delayed_tests()
             drain_once()
-        except Exception:LOG.exception("dispatcher dryrun failed")
+            if os.getenv("PUSH_REAL_EVENTS_ENABLED")=="true":
+                drain_real_events()
+        except Exception:
+            LOG.error("dispatcher cycle failed",exc_info=False)
         time.sleep(5)
 
 if __name__=="__main__":main()
