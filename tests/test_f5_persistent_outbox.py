@@ -22,3 +22,18 @@ def test_real_send_fails_closed():
     s=Path("app/notifications/cloud_dispatcher.py").read_text()
     assert 'AUTOMATED_WEB_PUSH_REQUIRES_G3_G4_RELEASE' in s
     assert "kind='BTC_V5_TEST'" in s
+
+def test_mirror_trade_events_never_exposes_private_payload():
+    from pathlib import Path
+    code=Path("app/notifications/persistent_outbox.py").read_text()
+    assert "FROM trade_events" in code
+    assert "'TRADE_EVENT_SHADOW'" in code
+    assert "'{}'::jsonb,'SENT'" in code
+    assert "ON CONFLICT(event_key) DO NOTHING" in code
+
+def test_mirror_rejects_wide_lookback():
+    from app.notifications.persistent_outbox import mirror_recent_trade_events
+    with pytest.raises(ValueError):
+        mirror_recent_trade_events(lookback_minutes=0)
+    with pytest.raises(ValueError):
+        mirror_recent_trade_events(lookback_minutes=61)
