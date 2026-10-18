@@ -130,6 +130,5 @@ def test_notification(body:TestNotification,user=Depends(get_current_user)):
                 vapid_claims={"sub":subject}, ttl=120, timeout=10)
     except Exception as exc:
         # Do not echo endpoint, user keys, URL or provider error to clients.
-        from fastapi import HTTPException
         raise HTTPException(status_code=502, detail="Push provider unavailable") from None
     return {"accepted":True}
