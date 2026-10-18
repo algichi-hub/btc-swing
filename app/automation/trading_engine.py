@@ -10,12 +10,7 @@ from app.config import Settings
 from app.market.hyperliquid import HyperliquidClient, closed_candles
 from app.models import Candle
 from app.notifications.telegram import TelegramDeliveryError, TelegramNotifier
-from app.settings.service import (
-    PNL_RECAP_TIME,
-    PNL_RECAP_WEEKDAY,
-    VALID_PNL_RECAP_WEEKDAYS,
-    SettingsService,
-)
+from app.settings.service import SettingsService
 from app.storage.trade_repository import TradeRepository
 
 RUNTIME_TRADE_WINDOW_OPEN_KEY = "runtime.trade_window_open"
@@ -92,50 +87,6 @@ def compute_daily_summary_window(
         period_end_local = anchor_today - timedelta(days=1)
 
     period_start_local = period_end_local - timedelta(days=1)
-    period_start_utc = period_start_local.astimezone(timezone.utc)
-    period_end_utc = period_end_local.astimezone(timezone.utc)
-
-    return period_start_utc, period_end_utc, period_start_local, period_end_local
-
-
-def compute_pnl_recap_window(
-    now_utc: datetime,
-    timezone_name: str,
-    *,
-    target_weekday: str,
-    report_hour: int,
-    report_minute: int,
-) -> tuple[datetime, datetime, datetime, datetime]:
-    target_weekday_upper = target_weekday.upper()
-    if target_weekday_upper not in VALID_PNL_RECAP_WEEKDAYS:
-        raise ValueError(f"Invalid weekday: {target_weekday}")
-
-    target_weekday_idx = VALID_PNL_RECAP_WEEKDAYS.index(target_weekday_upper)
-    tz = ZoneInfo(timezone_name)
-    now_local = now_utc.astimezone(tz)
-
-    anchor_today = now_local.replace(hour=report_hour, minute=report_minute, second=0, microsecond=0)
-    days_back = (now_local.weekday() - target_weekday_idx) % 7
-
-    if days_back == 0:
-        if now_local >= anchor_today:
-            period_end_local = anchor_today
-        else:
-            period_end_local = anchor_today - timedelta(days=7)
-    else:
-        target_date = now_local.date() - timedelta(days=days_back)
-        period_end_local = datetime(
-            target_date.year,
-            target_date.month,
-            target_date.day,
-            report_hour,
-            report_minute,
-            0,
-            0,
-            tzinfo=tz,
-        )
-
-    period_start_local = period_end_local - timedelta(days=7)
     period_start_utc = period_start_local.astimezone(timezone.utc)
     period_end_utc = period_end_local.astimezone(timezone.utc)
 
