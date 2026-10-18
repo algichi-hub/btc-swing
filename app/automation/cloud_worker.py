@@ -135,7 +135,8 @@ def run_once(run_engine: Callable[[], object], *, now: datetime | None = None) -
             # of notification delivery and no algorithm method is modified.
             if os.getenv('PUSH_REAL_EVENTS_ENABLED') == 'true':
                 try:
-                    from app.notifications.persistent_outbox import enqueue_real_trade_events
+                    from app.notifications.persistent_outbox import enqueue_real_trade_events,enqueue_real_trade_signals
+                    enqueue_real_trade_signals()
                     enqueue_real_trade_events()
                 except Exception as exc:
                     _LOG.warning('F5 trade outbox failure: %s', type(exc).__name__)
