@@ -782,6 +782,9 @@ def telegram_test() -> dict[str, bool]:
 
 
 def create_app(app_env: str | None = None) -> FastAPI:
+    if os.getenv('BTC_PROCESS_ROLE') == 'api':
+        from app.release_guard import enforce_cloud_isolation
+        enforce_cloud_isolation(role='api')
     env = (app_env or settings.app_env).strip().lower()
     is_prod = env == "production"
     application = FastAPI(
