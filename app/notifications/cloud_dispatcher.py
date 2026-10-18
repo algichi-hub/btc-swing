@@ -25,9 +25,10 @@ def drain_once(limit:int=20) -> dict:
                 # Dry-run does not consume pending items or expose recipients.
                 count+=1
                 continue
-            # Automated real delivery requires separate G3/G4 release gate.
-            # Fail closed if toggled before independently audited delivery engine exists.
-            raise RuntimeError("AUTOMATED_WEB_PUSH_REQUIRES_G3_G4_RELEASE")
+            # Synthetic events remain non-deliverable via the operational channel.
+            # Only TRADE_EVENT is processed by trade_dispatcher.
+            count+=1
+            continue
     return {"state":"DRY_RUN","processed":count}
 
 def main():
