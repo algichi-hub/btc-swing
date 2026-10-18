@@ -54,3 +54,30 @@ def mirror_recent_trade_events(*, lookback_minutes: int = 15) -> int:
                  ON CONFLICT(event_key) DO NOTHING""",(key,))
             inserted+=int(created.rowcount == 1)
     return inserted
+
+def enqueue_real_trade_events(*, lookback_days: int = 7) -> int:
+    """Mirror only committed trade_events. Does not invoke or change the algorithm.
+
+    Deduplicates by the immutable database event ID, including worker retries.
+    Historic events are ignored beyond seven days; the dispatcher expires stale
+    messages after 24 hours. Notification contains no prices, PnL or wallet data.
+    """
+    if not 1 <= lookback_days <= 7:
+        raise ValueError("invalid lookback")
+    if __import__("os").getenv("PUSH_REAL_EVENTS_ENABLED") != "true":
+        return 0
+    with connect_pg() as db:
+        rows=db.execute("""SELECT id,event_type FROM trade_events
+            WHERE event_at::timestamptz >= now()-(%s * interval '1 day')
+            ORDER BY id LIMIT 10000""",(lookback_days,)).fetchall()
+        added=0
+        for row in rows:
+            kind=str(row["event_type"]).upper()
+            if kind not in {"OPEN","ENTRY","OPENED","TP1","TP2","TP3","SL","CLOSE","CLOSED","TAKE_PROFIT","STOP_LOSS"}:
+                continue
+            key=hashlib.sha256(("trade-event:v1:"+str(row["id"])).encode()).hexdigest()
+            c=db.execute("""INSERT INTO v5_push_outbox(event_key,kind,public_payload,status,expires_at)
+                VALUES(%s,'TRADE_EVENT',%s::jsonb,'PENDING',now()+interval '24 hours')
+                ON CONFLICT(event_key) DO NOTHING""",(key,__import__("json").dumps({"kind":"TRADE_EVENT","event":kind,"title":"BTC Swing V5"})))
+            added+=int(c.rowcount==1)
+    return added
