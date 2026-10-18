@@ -21,6 +21,8 @@ def enforce_cloud_isolation(*, role: str | None = None) -> None:
         raise RuntimeError("F6 prohibits Telegram on cloud services")
     if any(os.getenv(k) for k in ("TELEGRAM_BOT_TOKEN","TELEGRAM_CHAT_ID")):
         raise RuntimeError("F6 prohibits Telegram secrets on cloud services")
+    if os.getenv("PUSH_DELAYED_TEST_ENABLED","").lower() in TRUE:
+        raise RuntimeError("F6 retired temporary delayed Push endpoint")
     if role=="push_dispatcher":
         if os.getenv("PUSH_DISPATCHER_REAL_SEND","").lower() in TRUE and os.getenv("PUSH_REAL_EVENTS_ENABLED")!="true":
             raise RuntimeError("F6 dispatcher real-send requires an explicit events gate")
