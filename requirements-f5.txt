@@ -1,0 +1,4 @@
+# F5 Web Push API requirements (isolated Preview)
+-r requirements-f2.lock
+pywebpush==2.5.0
+cryptography==47.0.0
