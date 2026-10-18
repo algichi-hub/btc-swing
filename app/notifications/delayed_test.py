@@ -18,7 +18,7 @@ def schedule(user_id:int, endpoint_hash:str)->dict:
                LIMIT 1""",(user_id,endpoint_hash)).fetchone()
         if pending: raise RuntimeError("A recent test already exists")
         row=db.execute("""INSERT INTO v5_push_delayed_tests(user_id,endpoint_hash,due_at)
-               VALUES (%s,%s,now()+interval '120 seconds')
+               VALUES (%s,%s,now()+interval '30 seconds')
                RETURNING id,due_at""",(user_id,endpoint_hash)).fetchone()
     return {"scheduled":True,"id":str(row["id"]),"due_at":row["due_at"].isoformat()}
 
