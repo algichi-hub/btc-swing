@@ -9,6 +9,7 @@ ROOT=Path("app/static")
 def test_manifest_scoped_login_not_private_cache():
     m=json.loads((ROOT/"manifest.webmanifest").read_text())
     assert m["scope"]=="/" and m["start_url"]=="/login" and m["display"]=="standalone"
+    assert m["icons"] and m["icons"][0]["src"]=="/static/icon.svg"
 def test_worker_never_caches_private_data():
     text=(ROOT/"sw.js").read_text()
     assert "caches.delete(key)" in text
