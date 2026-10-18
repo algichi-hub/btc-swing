@@ -105,3 +105,10 @@
 - Neon comprobado a las 19:40:14Z: outbox PENDING=0, entregas PENDING=0, un dispositivo activo, worker último OK 19:35:15Z.
 - CI última revisión: F5 security smoke `39159522510` SUCCESS; F0 baseline `39159522501` SUCCESS. Incluyen tests dinámicos simulados de 429/503, 410, revocación, agotamiento de intentos y TTL.
 - **Limitación:** reiniciar un dispatcher en reposo no demuestra recuperación tras caída entre envío externo y commit ni SIGKILL mid-write del engine; tampoco sustituye E2E autenticada VIEWER/CSRF/logout ni revocación/denegación en Android. **No se ha alcanzado G5 GO formal**, pues la matriz original requiere además cerrar G3/G4 y retirada efectiva de Telegram. No promover main/Production ni retirar todavía el botón temporal.
+
+## Ensayos disruptivos autorizados — 18-10-2026 ~21:55 CEST
+- Usuario autorizó reinicio controlado motor Preview y revocación temporal Push; Production y Raspberry sin cambios.
+- Motor `btc-v5-engine-preview` despliegue `7cb4d2fe-ebbb-401d-9f9b-2ad88cd2cab4` reiniciado desde Railway; tras la llamada Railway reporta SUCCESS; heartbeat en Neon OK y último ciclo previo 19:50 UTC; 12 ciclos OK durante la última hora. **Sólo recuperación básica de proceso PASS**, no SIGKILL precisamente a mitad de escritura, que sigue pendiente.
+- Neon Preview: única suscripción activa id=1 desactivada a `2026-10-18T19:55:13.315Z`. Evento sintético de canal `TRADE_EVENT` id=57 insertado a las 19:55:23Z; dispatcher lo completó con `status=SENT` y **0 filas** en `v5_push_deliveries` por ausencia de destinatarios. **PASS** en no enviar a suscripción revocada; estado SENT con 0 destinatarios significa procesamiento sin envíos, no una recepción Push.
+- **El usuario debe volver a suscribir Android desde Ajustes**. No marcar recuperación completa de la sesión/suscripción hasta confirmar físicamente un Push posterior.
+- G5 sigue NO-GO formal: el ensayo de corte mid-write, G4 autenticación VIEWER/CSRF/logout, retirada Telegram legacy y prueba física posresuscripción permanecen sin acreditar. No liberar a Production.
