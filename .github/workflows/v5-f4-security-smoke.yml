@@ -21,6 +21,7 @@ on:
       - 'app/notifications/persistent_outbox.py'
       - 'app/notifications/trade_dispatcher.py'
       - 'tests/test_f5_real_dispatcher.py'
+      - 'tests/test_f5_dispatcher_resilience.py'
       - 'app/automation/cloud_worker.py'
       - 'app/notifications/push_api.py'
       - 'requirements-f5.txt'
@@ -42,7 +43,7 @@ jobs:
       - name: Install pytest
         run: python -m pip install -r requirements-f5.txt
       - name: Check CSP, cache, and DOM sinks
-        run: python -m pytest -q tests/test_f4_security_headers.py tests/test_f5_preview.py tests/test_f5_dispatcher.py tests/test_f5_push_api.py tests/test_f5_push_gates.py tests/test_f5_persistent_outbox.py tests/test_f5_settings_cloud.py tests/test_f5_delayed_push.py tests/test_f5_real_dispatcher.py
+        run: python -m pytest -q tests/test_f4_security_headers.py tests/test_f5_preview.py tests/test_f5_dispatcher.py tests/test_f5_push_api.py tests/test_f5_push_gates.py tests/test_f5_persistent_outbox.py tests/test_f5_settings_cloud.py tests/test_f5_delayed_push.py tests/test_f5_real_dispatcher.py tests/test_f5_dispatcher_resilience.py
   railway-negative-smoke:
     runs-on: ubuntu-latest
     steps:
