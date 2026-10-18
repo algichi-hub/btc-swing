@@ -47,7 +47,7 @@ def devices(user=Depends(get_current_user)):
     if not _enabled():
         return {"items":[],"enabled":False}
     with connect_pg() as c:
-        rows=c.execute("SELECT endpoint_hash, device_label, created_at FROM push_subscriptions WHERE user_id=%s AND active=true ORDER BY created_at DESC", (user.id,)).fetchall()
+        rows=c.execute("SELECT endpoint_hash, device_label, created_at FROM v5_push_subscriptions WHERE user_id=%s AND active=true ORDER BY created_at DESC", (user.id,)).fetchall()
     return {"enabled":True,"items":[{"id":r["endpoint_hash"],"label":r["device_label"],"created_at":str(r["created_at"])} for r in rows]}
 
 @router.post("/subscribe",dependencies=[Depends(verify_csrf_origin),Depends(verify_csrf_token)])
@@ -68,10 +68,10 @@ def subscribe(payload: Subscription,user=Depends(get_current_user)):
     cipher=_cipher()
     digest=hashlib.sha256(payload.endpoint.encode()).hexdigest()
     with connect_pg() as c:
-        existing=c.execute("SELECT user_id FROM push_subscriptions WHERE endpoint_hash=%s",(digest,)).fetchone()
+        existing=c.execute("SELECT user_id FROM v5_push_subscriptions WHERE endpoint_hash=%s",(digest,)).fetchone()
         if existing and existing["user_id"] != user.id:
             raise HTTPException(status_code=409,detail="Subscription belongs to another account")
-        c.execute("""INSERT INTO push_subscriptions(user_id,endpoint_hash,endpoint_ciphertext,p256dh_ciphertext,auth_ciphertext,device_label)
+        c.execute("""INSERT INTO v5_push_subscriptions(user_id,endpoint_hash,endpoint_ciphertext,p256dh_ciphertext,auth_ciphertext,device_label)
         VALUES (%s,%s,%s,%s,%s,%s) ON CONFLICT(endpoint_hash) DO UPDATE SET
         active=true,device_label=EXCLUDED.device_label,updated_at=now()""",
         (user.id,digest,cipher.encrypt(payload.endpoint.encode()),cipher.encrypt(payload.keys["p256dh"].encode()),cipher.encrypt(payload.keys["auth"].encode()),payload.device_label))
@@ -85,7 +85,7 @@ def revoke(body:RemoveDevice,user=Depends(get_current_user)):
     if not _enabled():
         raise HTTPException(status_code=503,detail="Push disabled")
     with connect_pg() as c:
-        c.execute("UPDATE push_subscriptions SET active=false, updated_at=now() WHERE endpoint_hash=%s AND user_id=%s",(body.id,user.id))
+        c.execute("UPDATE v5_push_subscriptions SET active=false, updated_at=now() WHERE endpoint_hash=%s AND user_id=%s",(body.id,user.id))
     return {"ok":True}
 
 class TestNotification(BaseModel):
@@ -104,15 +104,15 @@ def test_notification(body:TestNotification,user=Depends(get_current_user)):
         raise HTTPException(status_code=503, detail="Push service not configured")
     with connect_pg() as c:
         row=c.execute("""SELECT endpoint_ciphertext,p256dh_ciphertext,auth_ciphertext
-        FROM push_subscriptions WHERE endpoint_hash=%s AND user_id=%s AND active=true""",
+        FROM v5_push_subscriptions WHERE endpoint_hash=%s AND user_id=%s AND active=true""",
         (body.id,user.id)).fetchone()
     if not row:
         raise HTTPException(status_code=404,detail="Device not found")
     with connect_pg() as c:
-        permit=c.execute("""INSERT INTO push_test_quota(user_id,endpoint_hash,last_sent_at)
+        permit=c.execute("""INSERT INTO v5_push_test_quota(user_id,endpoint_hash,last_sent_at)
         VALUES (%s,%s,now()) ON CONFLICT(user_id,endpoint_hash) DO UPDATE
         SET last_sent_at=now()
-        WHERE push_test_quota.last_sent_at < now() - INTERVAL '60 seconds'
+        WHERE v5_push_test_quota.last_sent_at < now() - INTERVAL '60 seconds'
         RETURNING endpoint_hash""",(user.id,body.id)).fetchone()
     if not permit:
         raise HTTPException(status_code=429,detail="Wait before testing this device again")
