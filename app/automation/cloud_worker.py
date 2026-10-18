@@ -160,6 +160,9 @@ def _build_engine():
             'SELECT version FROM schema_migrations').fetchall()}
     if not {'0001_initial', '0002_worker'} <= versions:
         raise RuntimeError('Database migrations 0001 and 0002 are required')
+    # V5 cloud has no weekly recap. Preserve immutable V4 algorithm source:
+    # disable only its legacy recap hook on the isolated V5 worker instance.
+    automation_engine.ensure_pending_pnl_recap = lambda *args, **kwargs: None
     recovered = [False]
     def run_cycle():
         if not recovered[0]:
