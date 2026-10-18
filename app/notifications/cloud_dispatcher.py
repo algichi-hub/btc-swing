@@ -38,6 +38,8 @@ def main():
         raise RuntimeError("Postgres required")
     if os.getenv("PUSH_DISPATCHER_REAL_SEND","false").lower()=="true" and os.getenv("PUSH_REAL_EVENTS_ENABLED")!="true":
         raise RuntimeError("Real dispatcher requires explicit event gate")
+    from app.release_guard import enforce_cloud_isolation
+    enforce_cloud_isolation(role='push_dispatcher')
     from app.notifications.trade_dispatcher import drain_real_events
     from app.notifications.delayed_test import drain_delayed_tests
     while True:
