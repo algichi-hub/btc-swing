@@ -1,0 +1,11 @@
+{
+  "name": "BTC Swing V5",
+  "short_name": "BTC Swing",
+  "description": "BTC Swing V5 - monitor de señales",
+  "start_url": "/login",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#101827",
+  "theme_color": "#101827",
+  "icons": []
+}
