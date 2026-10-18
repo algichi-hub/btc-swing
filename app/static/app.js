@@ -1662,12 +1662,6 @@ async function loadSettings() {
   if (byId('volume-confirmation-threshold') && payload.volume_confirmation_threshold != null) {
     byId('volume-confirmation-threshold').value = payload.volume_confirmation_threshold;
   }
-  if (byId('pnl-recap-weekday') && payload.pnl_recap_weekday != null) {
-    byId('pnl-recap-weekday').value = payload.pnl_recap_weekday;
-  }
-  if (byId('pnl-recap-time') && payload.pnl_recap_time != null) {
-    byId('pnl-recap-time').value = payload.pnl_recap_time;
-  }
 }
 
 function scheduleNextRefresh() {
@@ -1757,26 +1751,6 @@ async function saveSettings(event) {
       ? parseAndValidateSetting('volume_confirmation_threshold', byId('volume-confirmation-threshold').value)
       : undefined;
 
-    const pnlRecapWeekdayEl = byId('pnl-recap-weekday');
-    let pnlRecapWeekday;
-    if (pnlRecapWeekdayEl) {
-      const val = pnlRecapWeekdayEl.value.trim().toUpperCase();
-      if (!['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].includes(val)) {
-        throw new Error('Recap semanal de PnL — Día: selecciona un día válido.');
-      }
-      pnlRecapWeekday = val;
-    }
-
-    const pnlRecapTimeEl = byId('pnl-recap-time');
-    let pnlRecapTime;
-    if (pnlRecapTimeEl) {
-      const val = pnlRecapTimeEl.value.trim();
-      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(val)) {
-        throw new Error('Recap semanal de PnL — Hora: introduce una hora válida (00:00 a 23:59).');
-      }
-      pnlRecapTime = val;
-    }
-
     const bodyPayload = {
       backtest_candles: backtest,
       lookback_days: lookbackDays,
@@ -1797,12 +1771,6 @@ async function saveSettings(event) {
     }
     if (volumeConfirmationThreshold !== undefined) {
       bodyPayload.volume_confirmation_threshold = volumeConfirmationThreshold;
-    }
-    if (pnlRecapWeekday !== undefined) {
-      bodyPayload.pnl_recap_weekday = pnlRecapWeekday;
-    }
-    if (pnlRecapTime !== undefined) {
-      bodyPayload.pnl_recap_time = pnlRecapTime;
     }
 
     const response = await fetch('/api/settings', {
@@ -1846,12 +1814,6 @@ async function saveSettings(event) {
     }
     if (byId('volume-confirmation-threshold') && saved.volume_confirmation_threshold != null) {
       byId('volume-confirmation-threshold').value = saved.volume_confirmation_threshold;
-    }
-    if (byId('pnl-recap-weekday') && saved.pnl_recap_weekday != null) {
-      byId('pnl-recap-weekday').value = saved.pnl_recap_weekday;
-    }
-    if (byId('pnl-recap-time') && saved.pnl_recap_time != null) {
-      byId('pnl-recap-time').value = saved.pnl_recap_time;
     }
     setSettingsFeedback('Ajustes guardados correctamente', 'success');
 
