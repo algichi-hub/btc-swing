@@ -11,6 +11,9 @@ on:
       - 'app/notifications/push_outbox.py'
       - 'app/notifications/push_dispatcher_dryrun.py'
       - 'tests/test_f5_dispatcher.py'
+      - 'tests/test_f5_push_api.py'
+      - 'app/notifications/push_api.py'
+      - 'requirements-f5.txt'
       - 'migrations/0004_push_prepare.sql'
       - '.github/workflows/v5-f4-security-smoke.yml'
   pull_request:
@@ -27,9 +30,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install pytest
-        run: python -m pip install pytest
+        run: python -m pip install -r requirements-f5.txt
       - name: Check CSP, cache, and DOM sinks
-        run: python -m pytest -q tests/test_f4_security_headers.py tests/test_f5_preview.py tests/test_f5_dispatcher.py
+        run: python -m pytest -q tests/test_f4_security_headers.py tests/test_f5_preview.py tests/test_f5_dispatcher.py tests/test_f5_push_api.py
   railway-negative-smoke:
     runs-on: ubuntu-latest
     steps:
