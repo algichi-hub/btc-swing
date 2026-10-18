@@ -20,7 +20,9 @@ def test_worker_shadow_does_not_send():
 def test_real_send_fails_closed():
     from pathlib import Path
     s=Path("app/notifications/cloud_dispatcher.py").read_text()
-    assert 'AUTOMATED_WEB_PUSH_REQUIRES_G3_G4_RELEASE' in s
+    assert 'Real dispatcher requires explicit event gate' in s
+    assert 'PUSH_DISPATCHER_REAL_SEND' in s
+    assert 'PUSH_REAL_EVENTS_ENABLED' in s
     assert "kind='BTC_V5_TEST'" in s
 
 def test_mirror_trade_events_never_exposes_private_payload():
