@@ -28,7 +28,8 @@ self.addEventListener('push',e=>{
     TP1:'Objetivo TP1 alcanzado',TP2:'Objetivo TP2 alcanzado',
     TP3:'Objetivo TP3 alcanzado',SL:'Stop loss ejecutado',
     CLOSED:'Operación cerrada',CLOSE:'Operación cerrada',
-    STOP_LOSS:'Stop loss ejecutado',TAKE_PROFIT:'Objetivo alcanzado'};
+    STOP_LOSS:'Stop loss ejecutado',TAKE_PROFIT:'Objetivo alcanzado',
+    CHANNEL_TEST:'Prueba del canal automático (sin trade)'};
   const event=String(payload.event||'');
   if(!Object.prototype.hasOwnProperty.call(messages,event))return;
   const tag='btc-v5-trade-'+String(payload.id||'').slice(0,16);
