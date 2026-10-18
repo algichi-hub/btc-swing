@@ -14,7 +14,7 @@ on:
       - 'tests/test_f5_push_api.py'
       - 'tests/test_f5_push_gates.py'
       - 'tests/test_f5_persistent_outbox.py'
-      - 'tests/test_f5_settings_cloud.py'
+      - 'tests/test_f5_settings_cloud.py tests/test_f5_delayed_push.py'
       - 'app/main.py'
       - 'app/notifications/cloud_dispatcher.py'
       - 'app/notifications/persistent_outbox.py'
