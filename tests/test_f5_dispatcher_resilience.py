@@ -18,6 +18,7 @@ class DB:
                     "title":"BTC Swing V5","id":"example"},"attempts":0,
                     "expires_at":datetime.now(timezone.utc)+timedelta(hours=1)}
         self.status="PENDING"
+        self.expired=False
         self.devices={10:True}
         self.deliveries={}
     def __enter__(self): return self
@@ -26,12 +27,18 @@ class DB:
         q=" ".join(sql.upper().split())
         if "SELECT ID,PUBLIC_PAYLOAD,ATTEMPTS,EXPIRES_AT FROM V5_PUSH_OUTBOX" in q:
             return Result([self.event.copy()] if self.status=="PENDING" else [])
-        if "SELECT NOW()>=" in q: return Result([{"expired":False}])
+        if "SELECT NOW()>=" in q: return Result([{"expired":self.expired}])
         if "SELECT ID FROM V5_PUSH_SUBSCRIPTIONS" in q:
             return Result([{"id":k} for k,v in self.devices.items() if v])
         if "INSERT INTO V5_PUSH_DELIVERIES" in q:
             key=params[1]
             self.deliveries.setdefault(key,{"state":"PENDING","attempts":0,"last_error_code":None})
+            return Result()
+        if "UPDATE V5_PUSH_DELIVERIES SET STATE='EXPIRED'" in q:
+            for d in self.deliveries.values():
+                if d["state"]=="PENDING":
+                    d["state"]="EXPIRED"
+                    d["last_error_code"]="EVENT_EXPIRED"
             return Result()
         if "UPDATE V5_PUSH_DELIVERIES D SET STATE='EXPIRED'" in q:
             for k,d in self.deliveries.items():
@@ -58,7 +65,7 @@ class DB:
             self.event["attempts"]+=1
             return Result()
         if "UPDATE V5_PUSH_OUTBOX SET STATUS=" in q:
-            self.status=params[0]
+            self.status=params[0] if len(params)>1 else "EXPIRED"
             return Result()
         raise AssertionError("Unexpected SQL: "+q[:180])
 
@@ -122,3 +129,15 @@ def test_retries_exhaust_with_failure(monkeypatch):
     assert db.deliveries[10]["state"]=="FAILED"
     assert db.deliveries[10]["attempts"]==5
     assert db.deliveries[10]["last_error_code"]=="RETRY_EXHAUSTED"
+
+def test_event_expiry_terminalizes_pending_delivery(monkeypatch):
+    db=setup(monkeypatch)
+    def temporary(*args): raise RuntimeError("provider 503")
+    monkeypatch.setattr(td,"_send",temporary)
+    td.drain_real_events()
+    assert db.deliveries[10]["state"]=="PENDING"
+    db.expired=True
+    td.drain_real_events()
+    assert db.status=="EXPIRED"
+    assert db.deliveries[10]["state"]=="EXPIRED"
+    assert db.deliveries[10]["last_error_code"]=="EVENT_EXPIRED"
