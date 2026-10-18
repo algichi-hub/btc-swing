@@ -93,9 +93,13 @@ def drain_real_events(limit=10):
                     next_attempt_at=now()+(%s * interval '1 second'),updated_at=now()
                     WHERE id=%s""",(backoff,event["id"]))
             else:
-                failed=db.execute("""SELECT count(*) AS n FROM v5_push_deliveries
-                    WHERE event_id=%s AND state='FAILED'""",(event["id"],)).fetchone()["n"]
-                status="FAILED" if failed else "SENT"
+                totals=db.execute("""SELECT count(*) AS recipients,
+                    count(*) FILTER (WHERE state='FAILED') AS failed
+                    FROM v5_push_deliveries WHERE event_id=%s""",(event["id"],)).fetchone()
+                # A successfully processed outbox event is not a sent notification
+                # if every recipient was revoked before its first attempt.
+                status=("EXPIRED" if not totals["recipients"]
+                        else "FAILED" if totals["failed"] else "SENT")
                 db.execute("UPDATE v5_push_outbox SET status=%s,updated_at=now() WHERE id=%s",(status,event["id"]))
             count+=1
     return {"state":"RUNNING","processed":count}
