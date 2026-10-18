@@ -137,8 +137,10 @@ def run_once(run_engine: Callable[[], object], *, now: datetime | None = None) -
                     from app.notifications.persistent_outbox import record_shadow_cycle, mirror_recent_trade_events
                     record_shadow_cycle(key)
                     mirror_recent_trade_events()
-                except Exception:
-                    _LOG.warning('F5 shadow outbox unavailable; trading cycle unaffected')
+                except Exception as exc:
+                    # Record only exception type and PostgreSQL SQLSTATE, never SQL, URLs or credentials.
+                    _LOG.warning('F5 shadow outbox failed: %s / SQLSTATE %s; trading unaffected',
+                                 type(exc).__name__, getattr(exc, 'sqlstate', None) or 'N/A')
             _heartbeat(key=key,status='OK',success=True,details='completed')
             _telemetry(severity='INFO',code='CYCLE_COMPLETED',key=key,message='OK')
             return 'OK'
