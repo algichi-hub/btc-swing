@@ -31,3 +31,26 @@ def enqueue_synthetic_test(event_key: str, ttl_minutes:int=10) -> bool:
                 'PENDING',now()+(%s * interval '1 minute'))
         ON CONFLICT(event_key) DO NOTHING RETURNING id""",(key,ttl_minutes)).fetchone()
     return row is not None
+
+def mirror_recent_trade_events(*, lookback_minutes: int = 15) -> int:
+    """Shadow-read persisted trade events, never emit actual push or alter trading.
+
+    Select event IDs only. The unique digest prevents duplicate shadow entries
+    across retries, repeated cycles or multiple workers.
+    """
+    if not 1 <= lookback_minutes <= 60:
+        raise ValueError("invalid lookback")
+    with connect_pg() as db:
+        rows=db.execute("""SELECT id FROM trade_events
+            WHERE event_at::timestamptz >= now() - (%s * interval '1 minute')
+            ORDER BY id LIMIT 100""",(lookback_minutes,)).fetchall()
+        inserted=0
+        for row in rows:
+            key=hashlib.sha256(("trade-event-shadow:v1:"+str(row["id"])).encode()).hexdigest()
+            created=db.execute("""INSERT INTO v5_push_outbox
+                 (event_key,kind,public_payload,status,expires_at)
+                 VALUES (%s,'TRADE_EVENT_SHADOW','{}'::jsonb,'SENT',
+                   now()+interval '24 hours')
+                 ON CONFLICT(event_key) DO NOTHING RETURNING id""",(key,)).fetchone()
+            inserted+=int(created is not None)
+    return inserted
