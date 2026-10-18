@@ -58,6 +58,9 @@ class DB:
             state,attempts,code,_,_,key=params
             self.deliveries[key].update(state=state,attempts=attempts,last_error_code=code)
             return Result()
+        if "SELECT COUNT(*) AS RECIPIENTS" in q:
+            return Result([{"recipients":len(self.deliveries),
+                "failed":sum(d["state"]=="FAILED" for d in self.deliveries.values())}])
         if "SELECT COUNT(*) AS N FROM V5_PUSH_DELIVERIES" in q:
             wanted="PENDING" if "STATE='PENDING'" in q else "FAILED"
             return Result([{"n":sum(x["state"]==wanted for x in self.deliveries.values())}])
