@@ -39,3 +39,11 @@ CREATE TABLE IF NOT EXISTS push_deliveries (
     PRIMARY KEY(event_id,subscription_id)
 );
 -- Store only encrypted endpoints/keys. Production encryption/key rotation and grants are G5 requirements.
+
+-- One test per device/minute, atomically enforced in PostgreSQL.
+CREATE TABLE IF NOT EXISTS push_test_quota (
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    endpoint_hash CHAR(64) NOT NULL,
+    last_sent_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY(user_id,endpoint_hash)
+);
