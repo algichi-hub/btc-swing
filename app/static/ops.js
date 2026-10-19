@@ -1,7 +1,7 @@
 'use strict';
 const el = (id) => document.getElementById(id);
 let page = 1, totalPages = 1, busy = false;
-const formatTime = (v) => v ? new Date(v).toLocaleString('es-ES', {timeZone:'UTC'}) + ' UTC' : '—';
+const formatTime = (v) => v ? new Date(v).toLocaleString('es-ES', { timeZone: 'Europe/Madrid', timeZoneName: 'short' }) : '—';
 const text = (id,v) => {el(id).textContent = v == null ? '—' : String(v);};
 async function json(path) {
   const r = await fetch(path, {credentials:'same-origin', cache:'no-store', headers:{Accept:'application/json'}});
