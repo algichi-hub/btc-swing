@@ -34,3 +34,18 @@
 
 ## Precauciones
 No modificar `trading_engine.py` ni ejecutar migraciones DELETE/DROP. Mantener historial, no revelar secretos, no disparar órdenes reales, no asumir que provider-SENT equivale a recepción Android. Cerrar T05-08 únicamente con evidencias y alcance operativo expresamente delimitado.
+
+## Evidencias TG5/TG6 — 19-10-2026
+
+- GitHub seguridad/F5/F6, run `39203257761`: **SUCCESS**, con `tests/test_f6_telegram_isolation.py` incluida. Se repitió `railway-negative-smoke` después del despliegue API; ambas jobs `security-static` y `railway-negative-smoke` acabaron en SUCCESS.
+- GitHub baseline/golden, run `39203257772`: **SUCCESS**. `compare_commits(develop/f6-release-hardening, develop/f6-tg-removal)` confirma que `app/automation/trading_engine.py` no figura entre ficheros modificados (0 modificaciones al algoritmo).
+- Railway Preview con commit `e320501f55bc6237e1a14eb046be0bc3cb867581`:
+  - API `a10dea74-7a5c-4b92-969e-a83dba70b385` SUCCESS
+  - Engine `3e07f9f8-f21d-489c-80d4-dedd3ccab314` SUCCESS
+  - Push Dispatcher `73f6b4bd-05a2-477e-82fa-381015c20a23` SUCCESS
+- Neon Preview comprobado el 19-10 a las `05:13:57Z`: último ciclo worker `OK` `05:10:14Z`, `v5_push_outbox PENDING=0`, `v5_push_deliveries PENDING=0`, `1` dispositivo Push activo. No se escribió en el histórico de Telegram ni se aplicaron migraciones.
+- Import del cliente HTTP real Telegram relegado a la rama local/V4, no se instancia en V5 PostgreSQL. El módulo compartido se importa indirectamente desde el algoritmo congelado: por tanto NO declarar «cero importaciones físicas de Telegram».
+- El adaptador cloud sigue `configured=False` y bloquea `send_message`. Los guards prohíben credenciales y flags Telegram en cloud; los handlers Telegram de API fueron retirados de código en esta rama.
+- **Alcance de cierre T05-08:** independencia *operativa* Telegram de V5 en Preview **PASS por CI y comportamiento server-side verificado**. La eliminación *física absoluta* de todo módulo/símbolo Telegram del monorepo **NO-GO**, incompatible con la restricción de no alterar el motor original V4. Registrar esa deuda por separado; no usar el PASS operativo para declarar G6 Production GO.
+- **Límites de evidencia**: sin E2E de una notificación originada por trade espontáneo tras TG ni confirmación física Android posterior al último despliegue; los tests de transporte fallido son principalmente simulados. Esos aspectos continúan pendientes en la aceptación integral G6.
+- PR #19 permanece draft. Main, Production y Raspberry V4 no modificados. No hubo trading LIVE.
