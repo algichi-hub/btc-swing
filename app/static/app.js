@@ -3,7 +3,7 @@ window.fetch = async (...args) => {
   const response = await originalFetch(...args);
   if (response.status === 401) {
     const url = typeof args[0] === 'string' ? args[0] : (args[0]?.url || '');
-    if (!url.includes('/api/auth/login')) {
+    if (!url.includes('/api/auth/login') && !url.includes('/api/auth/me')) {
       window.location.href = '/login';
     }
   }
