@@ -856,6 +856,15 @@ def create_app(app_env: str | None = None) -> FastAPI:
                 content={"detail": "Error interno del servidor"},
             )
 
+    @application.get("/sw.js", include_in_schema=False)
+    def service_worker() -> Response:
+        # A root-scope Service Worker must be served at the origin root.
+        return FileResponse(
+            PROJECT_ROOT / "app" / "static" / "sw.js",
+            media_type="application/javascript",
+            headers={"Cache-Control": "no-store", "Service-Worker-Allowed": "/"},
+        )
+
     application.mount("/static", StaticFiles(directory=PROJECT_ROOT / "app" / "static"), name="static")
 
     @application.get("/", include_in_schema=False, response_model=None)
