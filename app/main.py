@@ -747,47 +747,6 @@ def automation_status() -> dict[str, bool | int | str | None]:
 
 
 
-def telegram_status() -> dict[str, str | bool | None]:
-    last_recap = None
-    return {
-        "enabled": bool(settings.telegram_enabled),
-        "configured": bool(telegram_notifier.configured),
-        "last_test_at": trade_repository.last_successful_telegram_event_at("TEST"),
-        "last_trade_alert_at": trade_repository.last_successful_telegram_event_at("TRADE_ALERT"),
-        "last_daily_summary_at": last_recap,
-    }
-
-
-
-def telegram_test() -> dict[str, bool]:
-    if not settings.telegram_enabled:
-        raise HTTPException(status_code=400, detail="Telegram is disabled")
-    if not telegram_notifier.configured:
-        raise HTTPException(status_code=400, detail="Telegram is not fully configured")
-
-    message = "\u2705 BTC Swing Trade: Telegram configurado correctamente."
-    event_key = f"TEST:{datetime.now(timezone.utc).isoformat()}"
-
-    try:
-        message_id = telegram_notifier.send_message(message)
-        trade_repository.record_telegram_event(
-            event_type="TEST",
-            event_key=event_key,
-            success=True,
-            telegram_message_id=message_id,
-        )
-    except TelegramDeliveryError as exc:
-        trade_repository.record_telegram_event(
-            event_type="TEST",
-            event_key=event_key,
-            success=False,
-            error_message=exc.__class__.__name__,
-        )
-        raise HTTPException(status_code=502, detail="Telegram test message failed") from exc
-
-    return {"ok": True}
-
-
 def create_app(app_env: str | None = None) -> FastAPI:
     if os.getenv('BTC_DB_BACKEND') == 'postgres':
         from app.release_guard import enforce_cloud_isolation
