@@ -109,7 +109,7 @@ class Settings:
     max_trade_loss_usd: float = _float("MAX_TRADE_LOSS_USD", 40)
 
     database_path: Path = _path("DATABASE_PATH", "data/btc_swing_trade.db")
-    auth_session_ttl_hours: int = _int("AUTH_SESSION_TTL_HOURS", 168)
+    auth_session_ttl_hours: int = _int("AUTH_SESSION_TTL_HOURS", 720)
     auth_session_touch_interval_seconds: int = _int("AUTH_SESSION_TOUCH_INTERVAL_SECONDS", 300)
     auth_cookie_secure: bool = _bool(
         "AUTH_COOKIE_SECURE",
