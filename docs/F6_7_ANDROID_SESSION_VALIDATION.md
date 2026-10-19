@@ -1,20 +1,23 @@
-# F6.7 — Persistencia de sesión PWA Android
+# F6.7 — Cierre de persistencia de sesión PWA Android (2026-10-19)
 
-**Motivación**: al liberar RAM Android y reabrir la PWA, se muestra login. No guardar credenciales ni tokens en JS/browser storage.
+**Decisión: GO de F6.7 en Railway Preview. No implica GO de G6 Production.**
 
-## Implementación
-- Cookie actual `btc_session`: `HttpOnly`, `Secure` (según entorno), `SameSite=Strict`, `Max-Age`. No se elimina al parar proceso Android.
-- TTL predeterminado aumentado de 168 a 720 horas (30 días), configurado en Railway API Preview `AUTH_SESSION_TTL_HOURS=720`. Se aplica a **nuevas sesiones** al iniciar sesión; sesiones ya emitidas conservan su vencimiento original.
-- `app/static/app.js`: `checkAuth()` envía credentials same-origin y redirige a login **solo ante 401/403 explícitos**. En errores de red, 5xx o rechazo transitorio presenta opción de reintentar sin descartar la sesión. No memoriza contraseña ni token, no cambia CSRF.
-- Sin renovación deslizante del vencimiento en DB: **30 días fijos desde login**, no renovables por uso normal. Extender el vencimiento existente requeriría una migración de lógica controlada adicional, no necesaria para corregir el falso logout por error de red.
+## Implementación certificada
+- Rama candidata: `fix/f6-7-android-session-gate`.
+- Commit desplegado: `f8560fb23d6c38e4e4db998514fdcf2a961811a7`.
+- Railway Preview API deployment: `720af92a-ffd3-483e-94f4-ba84fa61206a` (SUCCESS).
+- El interceptor global de HTTP 401 no interfiere con el flujo explícito de `/api/auth/me`.
+- `checkAuth()` trata fallos de red y 5xx como reintentos, sin invalidar la sesión. Los 401/403 explícitos producen navegación a login.
+- La cookie `btc_session` es `HttpOnly`, `SameSite=Lax`, `Secure` según entorno y `Max-Age` 30 días por defecto. No se guardan tokens/contraseñas en browser storage. El vencimiento es fijo, no deslizante.
 
-## Validación
-- CI `39204980624` baseline/security SUCCESS.
-- CI `39204980598` F4/F5/F6 security smoke SUCCESS; incluye `tests/test_f6_android_session.py`.
-- Railway API Preview commit `3ad87030269f3d37dec9f52e9e186ea44fc46798`, deploy `73e63774-0aeb-4617-acf1-ba5b86bddfbf` SUCCESS.
-- **Bloqueo:** Vercel no aceptó crear deployment manual en esta sesión (petición rechazada por controles del conector). El último deployment Vercel verificable es F6 anterior, no F6.7. **No se puede afirmar que el Android instalado ya ejecute el nuevo JS.**
-- Prueba física RAM-clear Android pendiente hasta verificar despliegue de la UI F6.7 en su mismo origen PWA. Validar la navegación y que no se redirige en 5xx/network fail. Comprobar cookie en mismo host HTTPS en registro/login y en `/api/auth/me`.
-- Nunca tocar Production/Raspberry V4 ni estrategia golden; PR F6.7 draft.
+## Evidencias
+- GitHub Actions baseline F0/F1 y pruebas PostgreSQL F2/F3: [run 39237490810](https://github.com/algichi-hub/btc-swing/actions/runs/39237490810), SUCCESS, job `f0` SUCCESS.
+- GitHub Actions seguridad F4/F5/F6: [run 39237490772](https://github.com/algichi-hub/btc-swing/actions/runs/39237490772), SUCCESS, jobs `security-static` y `railway-negative-smoke` SUCCESS.
+- Prueba manual Android reportada por usuario el 2026-10-19, sobre PWA instalada del origen Railway Preview tras despliegue de `f8560fb`: login correcto, cierre de app, liberación RAM y reapertura manteniendo sesión, sin introducir credenciales.
+- Railway environment status: API, Engine y Push Dispatcher online, una réplica por servicio, cero warnings y cero criticals al consultar el cierre.
+- PR [#21](https://github.com/algichi-hub/btc-swing/pull/21) en draft; no se ha integrado en `main`.
 
-## Riesgo técnico que conviene investigar si persiste
-Si liberar RAM elimina realmente datos/cookies del navegador, aumentar TTL no resolverá esa situación. Revisar el origen de instalación Android (same-origin), políticas de borrado de datos de sistema, y posible PWA Service Worker que fuerza navegación a login. El backend no puede restaurar una cookie eliminada por Android sin reautenticación.
+## Alcance y riesgos residuales
+- La persistencia no implica renovación silenciosa tras 30 días ni supervivencia al borrado explícito de cookies/datos del navegador.
+- Este GO se restringe a F6.7 y al entorno Preview. Las validaciones integrales G3/G4/G5 y rollback de Production, registradas en `docs/F6_G6_VALIDATION_20261018.md`, no están cerradas por esta prueba.
+- No modificar Raspberry V4, Production, `main` ni estrategia compartida sin gate G6 independiente.
