@@ -48,7 +48,6 @@ from app.config import PROJECT_ROOT, settings
 from app.indicators.stoch_rsi import stochastic_rsi
 from app.indicators.volume import relative_volume
 from app.market.hyperliquid import HyperliquidClient, closed_candles
-from app.notifications.telegram import TelegramDeliveryError, TelegramNotifier
 from app.settings.service import (
     BACKTEST_CANDLES,
     CLUSTER_TOLERANCE_PCT,
@@ -114,6 +113,8 @@ if os.getenv("BTC_DB_BACKEND") == "postgres":
     from app.notifications.cloud_noop import NullLegacyNotifier
     telegram_notifier = NullLegacyNotifier()
 else:
+    # Compatibility remains available for the untouched V4/local runtime.
+    from app.notifications.telegram import TelegramNotifier
     telegram_notifier = TelegramNotifier(
         token=settings.telegram_bot_token,
         chat_id=settings.telegram_chat_id,
