@@ -1,6 +1,7 @@
 """Non-destructive authorization regression using route-level dependency contracts."""
 from fastapi.routing import APIRoute
-from app.main import create_app
+from app.main import viewer_router, admin_router
+from app.api.operations import router as operations_router
 from app.auth.http import require_admin, require_authenticated, verify_csrf_token, verify_csrf_origin
 
 def dependency_tree(dependencies):
@@ -12,8 +13,13 @@ def dependency_tree(dependencies):
     return found
 
 def routes():
-    app=create_app()
-    return {(route.path,m):route for route in app.routes if isinstance(route,APIRoute) for m in route.methods}
+    result={}
+    for router in (viewer_router,admin_router,operations_router):
+        for route in router.routes:
+            if isinstance(route,APIRoute):
+                for method in route.methods:
+                    result[(router.prefix+route.path,method)] = route
+    return result
 
 def test_viewer_read_apis_require_authentication():
     found=routes()
