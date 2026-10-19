@@ -856,6 +856,17 @@ def create_app(app_env: str | None = None) -> FastAPI:
                 content={"detail": "Error interno del servidor"},
             )
 
+    @application.get("/pwa/icon-{size}.png", include_in_schema=False)
+    def pwa_icon(size: int) -> Response:
+        from app.pwa_assets import icon_png
+        if size not in (192, 512):
+            raise HTTPException(status_code=404)
+        return Response(
+            content=icon_png(size),
+            media_type="image/png",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
     @application.get("/sw.js", include_in_schema=False)
     def service_worker() -> Response:
         # A root-scope Service Worker must be served at the origin root.
