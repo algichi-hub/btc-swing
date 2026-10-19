@@ -1694,13 +1694,21 @@ async function refreshDashboard(options = { scheduleNext: true }) {
 
     renderMarket(payload.market || {});
     renderRange(payload.market?.price, payload.swing_range);
-    renderSignal(payload.signal || {});
-    renderTradePlan(payload.signal?.state, payload.trade_plan, payload.potential_trade_plan);
+    const marketFreshness = payload.market_freshness;
+    const freshMarket = marketFreshness?.status === 'FRESH' && marketFreshness?.is_stale === false;
+    // Never present a trade signal as actionable if the source candle is stale,
+    // missing, in the future, or the freshness field is absent (old API).
+    renderSignal(freshMarket ? (payload.signal || {}) : { state: 'NO_TRADE', side: null });
+    renderTradePlan(freshMarket ? payload.signal?.state : 'NO_TRADE',
+      freshMarket ? payload.trade_plan : null,
+      freshMarket ? payload.potential_trade_plan : null);
     renderTradeDiagnostics(payload.trade_diagnostics || null);
 
     lastValidTimestampIso = payload.timestamp || lastValidTimestampIso;
-    byId('status').textContent = 'ONLINE';
-    byId('updated-at').textContent = `Actualizado ${formatTimeFromIso(lastValidTimestampIso)}`;
+    byId('status').textContent = freshMarket ? 'ONLINE' : 'DATOS DE MERCADO OBSOLETOS';
+    byId('updated-at').textContent = freshMarket
+      ? `Actualizado ${formatTimeFromIso(lastValidTimestampIso)}`
+      : `Señales bloqueadas · última vela 1h: ${formatTimeFromIso(marketFreshness?.last_candle_close)}`;
 
     try {
       await loadAutomationStatus();
