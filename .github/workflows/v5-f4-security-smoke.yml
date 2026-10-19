@@ -7,6 +7,27 @@ on:
       - 'app/auth/**'
       - 'app/config.py'
       - 'tests/test_f4_security_headers.py'
+      - 'tests/test_f5_preview.py'
+      - 'app/notifications/push_outbox.py'
+      - 'app/notifications/push_dispatcher_dryrun.py'
+      - 'tests/test_f5_dispatcher.py'
+      - 'tests/test_f5_push_api.py'
+      - 'tests/test_f5_push_gates.py'
+      - 'tests/test_f5_persistent_outbox.py'
+      - 'tests/test_f5_settings_cloud.py'
+      - 'tests/test_f5_delayed_push.py'
+      - 'app/main.py'
+      - 'app/notifications/cloud_dispatcher.py'
+      - 'app/notifications/persistent_outbox.py'
+      - 'app/notifications/trade_dispatcher.py'
+      - 'tests/test_f5_real_dispatcher.py'
+      - 'tests/test_f5_dispatcher_resilience.py'
+      - 'tests/test_f6_release_guard.py'
+      - 'tests/test_f6_telegram_isolation.py'
+      - 'app/automation/cloud_worker.py'
+      - 'app/notifications/push_api.py'
+      - 'requirements-f5.txt'
+      - 'migrations/0004_push_prepare.sql'
       - '.github/workflows/v5-f4-security-smoke.yml'
   pull_request:
     branches: [main]
@@ -22,9 +43,9 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install pytest
-        run: python -m pip install pytest
+        run: python -m pip install -r requirements-f5.txt
       - name: Check CSP, cache, and DOM sinks
-        run: python -m pytest -q tests/test_f4_security_headers.py
+        run: python -m pytest -q tests/test_f4_security_headers.py tests/test_f5_preview.py tests/test_f5_dispatcher.py tests/test_f5_push_api.py tests/test_f5_push_gates.py tests/test_f5_persistent_outbox.py tests/test_f5_settings_cloud.py tests/test_f5_delayed_push.py tests/test_f5_real_dispatcher.py tests/test_f5_dispatcher_resilience.py tests/test_f6_release_guard.py tests/test_f6_telegram_isolation.py
   railway-negative-smoke:
     runs-on: ubuntu-latest
     steps:
@@ -40,4 +61,15 @@ jobs:
           done
           test "$(code -X POST -H 'Content-Type: application/json' --data '{}' "$API/api/auth/login")" = "403"
           test "$(code -X POST -H 'Origin: https://untrusted.invalid' -H 'Content-Type: application/json' --data '{}' "$API/api/auth/login")" = "403"
-          echo 'PASS: health 200, private APIs 401, malicious/missing Origin 403'
+          for path in /api/push/config /api/push/devices; do
+            test "$(code "$API$path")" = "401"
+          done
+          for path in /api/push/subscribe /api/push/test /api/push/revoke; do
+            test "$(code -X POST -H 'Origin: https://untrusted.invalid' -H 'Content-Type: application/json' --data '{}' "$API$path")" = "403"
+          done
+          for path in /api/telegram/status /api/telegram/test /api/push/test-delayed; do
+            result="$(code "$API$path")"
+            echo "Retired path GET $path => $result"
+            test "$result" = "401" -o "$result" = "404"
+          done
+          echo 'PASS: health 200, auth 401, origin 403, legacy Telegram and delayed Push routes removed'
