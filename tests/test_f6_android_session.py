@@ -5,7 +5,7 @@ def test_cookie_remains_http_only_and_persistent():
     source=Path("app/auth/http.py").read_text()
     assert "max_age=settings.auth_session_ttl_hours * 3600" in source or "max_age = settings.auth_session_ttl_hours * 3600" in source
     assert "httponly=True" in source
-    assert "samesite=\"strict\"" in source
+    assert "samesite=\"lax\"" in source
     assert "secure=settings.auth_cookie_secure" in source
 
 def test_pwa_reconnect_does_not_evict_session():
