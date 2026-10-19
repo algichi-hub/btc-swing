@@ -49,3 +49,9 @@ No modificar `trading_engine.py` ni ejecutar migraciones DELETE/DROP. Mantener h
 - **Alcance de cierre T05-08:** independencia *operativa* Telegram de V5 en Preview **PASS por CI y comportamiento server-side verificado**. La eliminación *física absoluta* de todo módulo/símbolo Telegram del monorepo **NO-GO**, incompatible con la restricción de no alterar el motor original V4. Registrar esa deuda por separado; no usar el PASS operativo para declarar G6 Production GO.
 - **Límites de evidencia**: sin E2E de una notificación originada por trade espontáneo tras TG ni confirmación física Android posterior al último despliegue; los tests de transporte fallido son principalmente simulados. Esos aspectos continúan pendientes en la aceptación integral G6.
 - PR #19 permanece draft. Main, Production y Raspberry V4 no modificados. No hubo trading LIVE.
+
+## E2E físico Android posterior al desacoplamiento — 19-10-2026
+- Evento sintético de canal #201 en Neon Preview, tipo `TRADE_EVENT` con `CHANNEL_TEST`; no crea órdenes ni señales de trading.
+- Programado para `2026-10-19T05:17:30.000Z` (07:17:30 CEST). `v5_push_outbox.status=SENT`, `updated_at=2026-10-19T05:17:35.478Z`; entrega única `v5_push_deliveries.state=SENT`, 1 intento, `delivered_at=2026-10-19T05:17:35.478Z`, `last_error_code=NULL`.
+- Usuario confirma recepción física a las **07:17:50 CEST**, aproximadamente 20 s después de lo programado y 14,5 s después de aceptación proveedor. **PASS E2E canal Push después de F6-TG**.
+- Resultado: T05-08 **GO para independencia operativa de Telegram en Preview**, respaldado por CI, motor inalterado y recepción Push en dispositivo. No demuestra paridad de una señal natural generada por motor ni eliminación física del código Telegram compartido V4; estas deudas permanecen abiertas. **G6 Production NO-GO**, no promover main.
