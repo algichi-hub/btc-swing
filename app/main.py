@@ -242,7 +242,9 @@ def build_dashboard_payload() -> dict:
 
     hourly = closed_candles(client.get_candles(settings.coin, "1h", hourly_count))
 
-    return build_dashboard_state(
+    from app.market.freshness import evaluate_hourly_freshness
+    market_freshness = evaluate_hourly_freshness(hourly)
+    payload = build_dashboard_state(
         price=price,
         daily_candles=daily_analysis,
         daily_warmup_candles=daily_warmup,
@@ -263,6 +265,8 @@ def build_dashboard_payload() -> dict:
         volume_confirmation_threshold=volume_confirmation_threshold,
         setup_context_manager=setup_context_manager,
     )
+    payload['market_freshness'] = market_freshness
+    return payload
 
 
 automation_engine = TradingAutomationEngine(
