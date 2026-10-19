@@ -1,7 +1,7 @@
 name: G6 RBAC and market freshness regression
 on:
   push:
-    branches: [test/g6-rbac-market-freshness]
+    branches: [test/g6-rbac-market-freshness, fix/g6-ops-madrid-timezone]
   pull_request:
     branches: [main]
   workflow_dispatch:
