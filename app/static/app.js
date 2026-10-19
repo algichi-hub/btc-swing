@@ -1847,20 +1847,43 @@ function attachTelegramTestButton() {
 let currentUser = null;
 
 async function checkAuth() {
+  // Android may kill the PWA process and momentarily lose connectivity on restart.
+  // Only an explicit authentication rejection proves the session is invalid.
+  function showReconnect() {
+    let notice = document.getElementById('auth-reconnect');
+    if (notice) return;
+    notice = document.createElement('div');
+    notice.id = 'auth-reconnect';
+    notice.setAttribute('role', 'alert');
+    notice.style.cssText = 'position:fixed;z-index:99999;inset:0;background:#101827;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center';
+    const message = document.createElement('p');
+    message.textContent = 'No se pudo verificar la sesión. Comprueba la conexión; no es necesario volver a introducir la contraseña.';
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.textContent = 'Reintentar conexión';
+    retry.addEventListener('click', () => { notice.remove(); void bootstrap(); });
+    notice.append(message, retry);
+    document.body.append(notice);
+  }
   try {
-    const res = await fetch('/api/auth/me', { cache: 'no-store' });
+    const res = await fetch('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' });
+    if (res.status === 401 || res.status === 403) {
+      window.location.replace('/login');
+      return null;
+    }
     if (!res.ok) {
-      window.location.href = '/login';
+      showReconnect();
       return null;
     }
     const user = await res.json();
+    document.getElementById('auth-reconnect')?.remove();
     currentUser = user;
     renderAuthBar(user);
     applyRbacUI(user);
     return user;
   } catch (err) {
-    console.error('Error verificando autenticación:', err);
-    window.location.href = '/login';
+    console.warn('Verificación de sesión temporalmente no disponible.');
+    showReconnect();
     return null;
   }
 }
