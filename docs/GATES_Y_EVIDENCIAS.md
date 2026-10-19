@@ -166,3 +166,11 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - CI seguridad/smoke `39105973558` SUCCESS (rerun HTTP contra API desplegada); regresión `39105973560` SUCCESS.
 - Habilitada entrega real **solo a demanda y con consentimiento** por `/api/push/test`, autenticación/CSRF, test-rate limit 60 s y notificación sin datos operativos.
 - **Decisión G5 = NO-GO**, T05-04 recepción física con PWA cerrada NOT RUN, T05-08 retirada Telegram pendiente, resto pruebas parciales según acta. **F5 Preview = APTO PARA CONFIGURACIÓN Y PRUEBAS REALES VOLUNTARIAS**, no para Production ni eventos operativos.
+
+
+## Cierre F6.7 — 2026-10-19 (subgate Android, no G6 Production)
+- **F6.7 GO en Railway Preview**: usuario confirma login y reapertura de PWA tras liberar RAM Android, manteniendo sesión, con API commit `f8560fb` desplegado.
+- Evidencias automatizadas: [baseline y PostgreSQL 39237490810](https://github.com/algichi-hub/btc-swing/actions/runs/39237490810) SUCCESS; [seguridad y HTTP negativo 39237490772](https://github.com/algichi-hub/btc-swing/actions/runs/39237490772) SUCCESS.
+- Deployment Railway API `720af92a-ffd3-483e-94f4-ba84fa61206a` SUCCESS. API/Engine/Dispatcher online al cierre.
+- Acta detallada: [F6.7 Android](F6_7_ANDROID_SESSION_VALIDATION.md). PR #21 permanece draft.
+- **G6 Production continúa NO-GO** hasta acreditar las pruebas disruptivas mid-write G3, RBAC/MFA/CSRF/logout E2E G4, push real y reintentos G5, aceptación del alcance Telegram, rollback práctico y firma de promoción. No trasladar el GO de F6.7 a G6.
