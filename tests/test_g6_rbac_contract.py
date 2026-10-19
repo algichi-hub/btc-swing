@@ -18,7 +18,7 @@ def routes():
         for route in router.routes:
             if isinstance(route,APIRoute):
                 for method in route.methods:
-                    result[(router.prefix+route.path,method)] = route
+                    result[(route.path,method)] = route
     return result
 
 def test_viewer_read_apis_require_authentication():
