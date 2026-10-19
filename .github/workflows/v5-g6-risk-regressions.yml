@@ -1,0 +1,21 @@
+name: G6 RBAC and market freshness regression
+on:
+  push:
+    branches: [test/g6-rbac-market-freshness]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  g6-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: python -m pip install -r requirements-f5.txt
+      - name: Run G6 focused regressions
+        run: python -m pytest -q tests/test_g6_rbac_contract.py tests/test_g6_market_freshness.py tests/test_g6_rbac_http.py

@@ -131,6 +131,25 @@ def run_once(run_engine: Callable[[], object], *, now: datetime | None = None) -
                 conn.execute('''UPDATE worker_cycles SET status='OK',error_code=NULL,
                                 duration_ms=%s,completed_at=now() WHERE cycle_key=%s''',
                              (elapsed,key))
+            # Publish already-committed trade events; trading success is independent
+            # of notification delivery and no algorithm method is modified.
+            if os.getenv('PUSH_REAL_EVENTS_ENABLED') == 'true':
+                try:
+                    from app.notifications.persistent_outbox import enqueue_real_trade_events,enqueue_real_trade_signals
+                    enqueue_real_trade_signals()
+                    enqueue_real_trade_events()
+                except Exception as exc:
+                    _LOG.warning('F5 trade outbox failure: %s', type(exc).__name__)
+            # F5 shadow-only audit: after committed OK, never enters trading decision path.
+            if os.getenv('PUSH_SHADOW_EVENTS_ENABLED','false').lower() == 'true':
+                try:
+                    from app.notifications.persistent_outbox import record_shadow_cycle, mirror_recent_trade_events
+                    record_shadow_cycle(key)
+                    mirror_recent_trade_events()
+                except Exception as exc:
+                    # Record only exception type and PostgreSQL SQLSTATE, never SQL, URLs or credentials.
+                    _LOG.warning('F5 shadow outbox failed: %s / SQLSTATE %s; trading unaffected',
+                                 type(exc).__name__, getattr(exc, 'sqlstate', None) or 'N/A')
             _heartbeat(key=key,status='OK',success=True,details='completed')
             _telemetry(severity='INFO',code='CYCLE_COMPLETED',key=key,message='OK')
             return 'OK'
@@ -152,6 +171,9 @@ def _build_engine():
             'SELECT version FROM schema_migrations').fetchall()}
     if not {'0001_initial', '0002_worker'} <= versions:
         raise RuntimeError('Database migrations 0001 and 0002 are required')
+    # V5 cloud has no weekly recap. Preserve immutable V4 algorithm source:
+    # disable only its legacy recap hook on the isolated V5 worker instance.
+    automation_engine.ensure_pending_pnl_recap = lambda *args, **kwargs: None
     recovered = [False]
     def run_cycle():
         if not recovered[0]:
@@ -169,6 +191,8 @@ def main() -> None:
         raise RuntimeError('Worker requires BTC_DB_BACKEND=postgres')
     if os.getenv('BTC_LIVE_TRADING', '').lower() not in ('','0','false','off','no'):
         raise RuntimeError('Live orders are forbidden during F3')
+    from app.release_guard import enforce_cloud_isolation
+    enforce_cloud_isolation(role='worker')
     cycle = _build_engine()
     stop = False
     def on_shutdown(signum, frame):
