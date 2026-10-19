@@ -74,4 +74,9 @@ jobs:
             echo "Retired path GET $path => $result"
             test "$result" = "401" -o "$result" = "404"
           done
-          echo 'PASS: health 200, auth 401, origin 403, legacy Telegram and delayed Push routes removed'
+          for path in /sw.js /pwa/icon-192.png /pwa/icon-512.png /static/manifest.webmanifest; do
+            result="$(code "$API$path")"
+            echo "PWA asset $path => $result"
+            test "$result" = "200"
+          done
+          echo 'PASS: security checks and PWA install assets served'
