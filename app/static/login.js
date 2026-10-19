@@ -101,6 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (response.ok) {
         window.location.href = '/';
+      } else if (response.status === 403) {
+        showError('Este dominio de acceso no está autorizado. Abre la dirección oficial de Preview o contacta con el administrador.');
       } else if (response.status === 429) {
         const errorData = await response.json().catch(() => null);
         showError(errorData?.detail || 'Demasiados intentos de acceso fallidos. Por favor, inténtelo de nuevo más tarde.');

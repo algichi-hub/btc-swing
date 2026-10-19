@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "release": "BTC Swing V5 G6",
+  "environment": "PREVIEW",
+  "decision": "NO-GO",
+  "note": "Never mark PASS without evidence; inherited G5 and G3/G4 remain open.",
+  "g3_midwrite_recovery": {
+    "status": "PENDING",
+    "evidence_url": null,
+    "owner": null,
+    "observed_at": null
+  },
+  "g4_authenticated_rbac": {
+    "status": "PENDING",
+    "evidence_url": null,
+    "owner": null,
+    "observed_at": null
+  },
+  "g4_logout_csrf": {
+    "status": "PENDING",
+    "evidence_url": null,
+    "owner": null,
+    "observed_at": null
+  },
+  "g5_provider_retries": {
+    "status": "PENDING",
+    "evidence_url": null,
+    "owner": null,
+    "observed_at": null
+  },
+  "g5_android_resubscribe": {
+    "status": "PENDING",
+    "evidence_url": null,
+    "owner": null,
+    "observed_at": null
+  },
+  "telegram_removed": {
+    "status": "PENDING",
+    "evidence_url": null,
+    "owner": null,
+    "observed_at": null
+  },
+  "full_regression": {
+    "status": "PENDING",
+    "evidence_url": null,
+    "owner": null,
+    "observed_at": null
+  },
+  "rollback_verified": {
+    "status": "PENDING",
+    "evidence_url": null,
+    "owner": null,
+    "observed_at": null
+  }
+}

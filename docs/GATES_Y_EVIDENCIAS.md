@@ -159,3 +159,10 @@ No confundir «desarrollado» con «verificado»: PASS exige ejecución registra
 - **R06 reducido**, controles anónimos/origen PASS, RBAC VIEWER y CSRF positivo/negativo autenticados aún sin evidencia E2E. **R10 reducido**, usuario confirmó login por Vercel, faltan logout/cookie/expiración mediante navegador. **R19 mitigado F4**, CSP/no-store y checks estáticos PASS; caché SW/offline queda F5.
 - **Entrada excepcional de desarrollo F5-E0: APTO CON RIESGO CONTROLADO**: rama aislada, fixtures/no secrets, no envío real de push, no integración con eventos operativos y no cambios a Production/Raspberry. Aceptación técnica de preparación, NO aceptación automática de riesgos residuales altos.
 - **G3 NO-GO** por SIGKILL mid-write Railway no acreditado; **G4 NO-GO** por matriz autenticada/carga/roles/destructivos aún pendiente. **F5 formal y G5 NO-GO**; no activar dispatcher ni notificaciones reales antes de cerrar gates.
+
+## Gate G5 — revisión de Preview con envío Web Push real habilitado para pruebas (18-10-2026)
+- **Acta completa:** [F5_GATE_EVALUACION_20261018.md](F5_GATE_EVALUACION_20261018.md).
+- API Preview Railway SUCCESS (`70729a40-9a1c-4463-912a-9a716037e679`) y Vercel Preview READY (`dpl_8D5PG9ejbaM8vFoXqkBw3iE9BRR6`); Neon Preview añade tablas v5_push separadas con secretos cifrados.
+- CI seguridad/smoke `39105973558` SUCCESS (rerun HTTP contra API desplegada); regresión `39105973560` SUCCESS.
+- Habilitada entrega real **solo a demanda y con consentimiento** por `/api/push/test`, autenticación/CSRF, test-rate limit 60 s y notificación sin datos operativos.
+- **Decisión G5 = NO-GO**, T05-04 recepción física con PWA cerrada NOT RUN, T05-08 retirada Telegram pendiente, resto pruebas parciales según acta. **F5 Preview = APTO PARA CONFIGURACIÓN Y PRUEBAS REALES VOLUNTARIAS**, no para Production ni eventos operativos.

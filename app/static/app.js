@@ -1662,12 +1662,6 @@ async function loadSettings() {
   if (byId('volume-confirmation-threshold') && payload.volume_confirmation_threshold != null) {
     byId('volume-confirmation-threshold').value = payload.volume_confirmation_threshold;
   }
-  if (byId('pnl-recap-weekday') && payload.pnl_recap_weekday != null) {
-    byId('pnl-recap-weekday').value = payload.pnl_recap_weekday;
-  }
-  if (byId('pnl-recap-time') && payload.pnl_recap_time != null) {
-    byId('pnl-recap-time').value = payload.pnl_recap_time;
-  }
 }
 
 function scheduleNextRefresh() {
@@ -1757,26 +1751,6 @@ async function saveSettings(event) {
       ? parseAndValidateSetting('volume_confirmation_threshold', byId('volume-confirmation-threshold').value)
       : undefined;
 
-    const pnlRecapWeekdayEl = byId('pnl-recap-weekday');
-    let pnlRecapWeekday;
-    if (pnlRecapWeekdayEl) {
-      const val = pnlRecapWeekdayEl.value.trim().toUpperCase();
-      if (!['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].includes(val)) {
-        throw new Error('Recap semanal de PnL — Día: selecciona un día válido.');
-      }
-      pnlRecapWeekday = val;
-    }
-
-    const pnlRecapTimeEl = byId('pnl-recap-time');
-    let pnlRecapTime;
-    if (pnlRecapTimeEl) {
-      const val = pnlRecapTimeEl.value.trim();
-      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(val)) {
-        throw new Error('Recap semanal de PnL — Hora: introduce una hora válida (00:00 a 23:59).');
-      }
-      pnlRecapTime = val;
-    }
-
     const bodyPayload = {
       backtest_candles: backtest,
       lookback_days: lookbackDays,
@@ -1797,12 +1771,6 @@ async function saveSettings(event) {
     }
     if (volumeConfirmationThreshold !== undefined) {
       bodyPayload.volume_confirmation_threshold = volumeConfirmationThreshold;
-    }
-    if (pnlRecapWeekday !== undefined) {
-      bodyPayload.pnl_recap_weekday = pnlRecapWeekday;
-    }
-    if (pnlRecapTime !== undefined) {
-      bodyPayload.pnl_recap_time = pnlRecapTime;
     }
 
     const response = await fetch('/api/settings', {
@@ -1847,12 +1815,6 @@ async function saveSettings(event) {
     if (byId('volume-confirmation-threshold') && saved.volume_confirmation_threshold != null) {
       byId('volume-confirmation-threshold').value = saved.volume_confirmation_threshold;
     }
-    if (byId('pnl-recap-weekday') && saved.pnl_recap_weekday != null) {
-      byId('pnl-recap-weekday').value = saved.pnl_recap_weekday;
-    }
-    if (byId('pnl-recap-time') && saved.pnl_recap_time != null) {
-      byId('pnl-recap-time').value = saved.pnl_recap_time;
-    }
     setSettingsFeedback('Ajustes guardados correctamente', 'success');
 
     await refreshDashboard({ scheduleNext: false });
@@ -1885,20 +1847,43 @@ function attachTelegramTestButton() {
 let currentUser = null;
 
 async function checkAuth() {
+  // Android may kill the PWA process and momentarily lose connectivity on restart.
+  // Only an explicit authentication rejection proves the session is invalid.
+  function showReconnect() {
+    let notice = document.getElementById('auth-reconnect');
+    if (notice) return;
+    notice = document.createElement('div');
+    notice.id = 'auth-reconnect';
+    notice.setAttribute('role', 'alert');
+    notice.style.cssText = 'position:fixed;z-index:99999;inset:0;background:#101827;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center';
+    const message = document.createElement('p');
+    message.textContent = 'No se pudo verificar la sesión. Comprueba la conexión; no es necesario volver a introducir la contraseña.';
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.textContent = 'Reintentar conexión';
+    retry.addEventListener('click', () => { notice.remove(); void bootstrap(); });
+    notice.append(message, retry);
+    document.body.append(notice);
+  }
   try {
-    const res = await fetch('/api/auth/me', { cache: 'no-store' });
+    const res = await fetch('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' });
+    if (res.status === 401 || res.status === 403) {
+      window.location.replace('/login');
+      return null;
+    }
     if (!res.ok) {
-      window.location.href = '/login';
+      showReconnect();
       return null;
     }
     const user = await res.json();
+    document.getElementById('auth-reconnect')?.remove();
     currentUser = user;
     renderAuthBar(user);
     applyRbacUI(user);
     return user;
   } catch (err) {
-    console.error('Error verificando autenticación:', err);
-    window.location.href = '/login';
+    console.warn('Verificación de sesión temporalmente no disponible.');
+    showReconnect();
     return null;
   }
 }
