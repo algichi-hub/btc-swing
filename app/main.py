@@ -35,12 +35,12 @@ from app.auth import (
 )
 
 from app.api.operations import router as operations_router
+from app.notifications.push_api import router as push_router
 from app.automation.scheduler import AutomationScheduler
 from app.automation.trading_engine import (
     RUNTIME_LAST_CYCLE_ERROR_KEY,
     RUNTIME_LAST_CYCLE_SUCCESS_KEY,
     RUNTIME_LAST_MARKET_CYCLE_AT_KEY,
-    RUNTIME_PNL_RECAP_SCHEDULE_EFFECTIVE_AT_KEY,
     RUNTIME_TRADE_WINDOW_OPEN_KEY,
     TradingAutomationEngine,
 )
@@ -48,7 +48,6 @@ from app.config import PROJECT_ROOT, settings
 from app.indicators.stoch_rsi import stochastic_rsi
 from app.indicators.volume import relative_volume
 from app.market.hyperliquid import HyperliquidClient, closed_candles
-from app.notifications.telegram import TelegramDeliveryError, TelegramNotifier
 from app.settings.service import (
     BACKTEST_CANDLES,
     CLUSTER_TOLERANCE_PCT,
@@ -89,8 +88,6 @@ class SettingsUpdatePayload(BaseModel):
     pnl_chart_days: int | None = None
     volume_baseline_period: int | None = None
     volume_confirmation_threshold: float | None = None
-    pnl_recap_weekday: str | None = None
-    pnl_recap_time: str | None = None
 
     @model_validator(mode="before")
     @classmethod
@@ -110,10 +107,18 @@ settings_service = SettingsService(
     backtest_default=settings.backtest_candles_default,
 )
 trade_repository = TradeRepository(settings.database_path)
-telegram_notifier = TelegramNotifier(
-    token=settings.telegram_bot_token,
-    chat_id=settings.telegram_chat_id,
-)
+if os.getenv("BTC_DB_BACKEND") == "postgres":
+    # Preserve the immutable V4 engine interface without providing a network
+    # capable Telegram transport to V5 cloud processes.
+    from app.notifications.cloud_noop import NullLegacyNotifier
+    telegram_notifier = NullLegacyNotifier()
+else:
+    # Compatibility remains available for the untouched V4/local runtime.
+    from app.notifications.telegram import TelegramNotifier
+    telegram_notifier = TelegramNotifier(
+        token=settings.telegram_bot_token,
+        chat_id=settings.telegram_chat_id,
+    )
 setup_context_manager = SetupContextManager(repository=trade_repository)
 
 
@@ -574,35 +579,15 @@ def market_snapshot() -> dict:
 
 @viewer_router.get("/settings")
 def get_app_settings() -> dict[str, Any]:
-    return settings_service.get_all()
+    values = settings_service.get_all()
+    # V5 cloud no longer exposes retired recap scheduling preferences.
+    return {key: value for key, value in values.items() if key not in ("pnl_recap_weekday", "pnl_recap_time")}
 
 
 @admin_router.put("/settings")
 def update_app_settings(payload: SettingsUpdatePayload) -> dict[str, Any]:
     try:
         updates = payload.model_dump(exclude_unset=True)
-        recap_changed = "pnl_recap_weekday" in updates or "pnl_recap_time" in updates
-
-        if recap_changed:
-            previous_settings = settings_service.get_all()
-            rollback_payload = {k: previous_settings[k] for k in updates if k in previous_settings}
-            saved = settings_service.update_many(updates)
-            try:
-                automation_scheduler.reschedule_pnl_recap(
-                    weekday=updates.get("pnl_recap_weekday"),
-                    time_str=updates.get("pnl_recap_time"),
-                )
-            except Exception as exc:
-                try:
-                    settings_service.update_many(rollback_payload)
-                except Exception:
-                    pass
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Failed to reschedule recap trigger: {exc}",
-                ) from exc
-            return saved
-
         return settings_service.update_many(updates)
     except SettingsValidationError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
@@ -634,10 +619,6 @@ def reset_database() -> dict[str, Any]:
         trade_repository.reset_operational_data()
         setup_context_manager.clear()
         trade_repository.set_runtime_bool(RUNTIME_TRADE_WINDOW_OPEN_KEY, False)
-        trade_repository.set_runtime_state(
-            RUNTIME_PNL_RECAP_SCHEDULE_EFFECTIVE_AT_KEY,
-            datetime.now(timezone.utc).isoformat(),
-        )
         return {"ok": True, "message": "Base de datos reseteada correctamente."}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Database reset failed: {exc}") from exc
@@ -718,6 +699,27 @@ def get_setup_history(setup_id: str) -> dict[str, Any]:
 
 @viewer_router.get("/automation/status")
 def automation_status() -> dict[str, bool | int | str | None]:
+    if os.environ.get("BTC_PROCESS_ROLE") == "api" and os.environ.get("BTC_DB_BACKEND") == "postgres":
+        from app.automation.cloud_worker import get_worker_health, INTERVAL_SECONDS
+        info = get_worker_health()
+        last_success = info.get("last_success_at")
+        running = info.get("status") == "OK" and info.get("age_seconds", 1e9) < 660
+        next_slot = None
+        if running:
+            now = datetime.now(timezone.utc)
+            slot = (int(now.timestamp()) // INTERVAL_SECONDS + 1) * INTERVAL_SECONDS
+            next_slot = datetime.fromtimestamp(slot, tz=timezone.utc).isoformat()
+        return {
+            "running": running,
+            "interval_seconds": INTERVAL_SECONDS,
+            "last_market_cycle_at": last_success,
+            "next_market_cycle_at": next_slot,
+            "last_cycle_success": info.get("status") == "OK",
+            "last_cycle_error": None if info.get("status") == "OK" else "WORKER_UNAVAILABLE",
+            "daily_summary_time": f"{settings.telegram_daily_report_hour:02d}:{settings.telegram_daily_report_minute:02d}",
+            "timezone": settings.telegram_timezone,
+            "is_stale": not running,
+        }
     scheduler_status = automation_scheduler.market_cycle_status()
 
     last_market_cycle_at = trade_repository.get_runtime_state(RUNTIME_LAST_MARKET_CYCLE_AT_KEY)
@@ -731,12 +733,6 @@ def automation_status() -> dict[str, bool | int | str | None]:
     else:
         stale = (datetime.now(timezone.utc) - parsed_last_cycle) > timedelta(minutes=10)
 
-    get_schedule = getattr(automation_scheduler, "get_recap_schedule", None)
-    if get_schedule is not None:
-        recap_weekday, recap_hour, recap_minute = get_schedule()
-    else:
-        recap_weekday, recap_hour, recap_minute = "SUNDAY", 5, 0
-
     return {
         "running": bool(scheduler_status["running"]),
         "interval_seconds": int(scheduler_status["interval_seconds"]),
@@ -745,60 +741,16 @@ def automation_status() -> dict[str, bool | int | str | None]:
         "last_cycle_success": last_cycle_success,
         "last_cycle_error": last_cycle_error,
         "daily_summary_time": f"{settings.telegram_daily_report_hour:02d}:{settings.telegram_daily_report_minute:02d}",
-        "pnl_recap_weekday": recap_weekday,
-        "pnl_recap_time": f"{recap_hour:02d}:{recap_minute:02d}",
         "timezone": settings.telegram_timezone,
         "is_stale": stale,
     }
 
 
-@viewer_router.get("/telegram/status")
-def telegram_status() -> dict[str, str | bool | None]:
-    last_recap = (
-        trade_repository.last_successful_telegram_event_at("PNL_RECAP")
-        or trade_repository.last_successful_telegram_event_at("DAILY_SUMMARY")
-    )
-    return {
-        "enabled": bool(settings.telegram_enabled),
-        "configured": bool(telegram_notifier.configured),
-        "last_test_at": trade_repository.last_successful_telegram_event_at("TEST"),
-        "last_trade_alert_at": trade_repository.last_successful_telegram_event_at("TRADE_ALERT"),
-        "last_daily_summary_at": last_recap,
-        "last_pnl_recap_at": last_recap,
-    }
-
-
-@admin_router.post("/telegram/test")
-def telegram_test() -> dict[str, bool]:
-    if not settings.telegram_enabled:
-        raise HTTPException(status_code=400, detail="Telegram is disabled")
-    if not telegram_notifier.configured:
-        raise HTTPException(status_code=400, detail="Telegram is not fully configured")
-
-    message = "\u2705 BTC Swing Trade: Telegram configurado correctamente."
-    event_key = f"TEST:{datetime.now(timezone.utc).isoformat()}"
-
-    try:
-        message_id = telegram_notifier.send_message(message)
-        trade_repository.record_telegram_event(
-            event_type="TEST",
-            event_key=event_key,
-            success=True,
-            telegram_message_id=message_id,
-        )
-    except TelegramDeliveryError as exc:
-        trade_repository.record_telegram_event(
-            event_type="TEST",
-            event_key=event_key,
-            success=False,
-            error_message=exc.__class__.__name__,
-        )
-        raise HTTPException(status_code=502, detail="Telegram test message failed") from exc
-
-    return {"ok": True}
-
 
 def create_app(app_env: str | None = None) -> FastAPI:
+    if os.getenv('BTC_DB_BACKEND') == 'postgres':
+        from app.release_guard import enforce_cloud_isolation
+        enforce_cloud_isolation(role='api')
     env = (app_env or settings.app_env).strip().lower()
     is_prod = env == "production"
     application = FastAPI(
@@ -904,6 +856,26 @@ def create_app(app_env: str | None = None) -> FastAPI:
                 content={"detail": "Error interno del servidor"},
             )
 
+    @application.get("/pwa/icon-{size}.png", include_in_schema=False)
+    def pwa_icon(size: int) -> Response:
+        from app.pwa_assets import icon_png
+        if size not in (192, 512):
+            raise HTTPException(status_code=404)
+        return Response(
+            content=icon_png(size),
+            media_type="image/png",
+            headers={"Cache-Control": "public, max-age=86400"},
+        )
+
+    @application.get("/sw.js", include_in_schema=False)
+    def service_worker() -> Response:
+        # A root-scope Service Worker must be served at the origin root.
+        return FileResponse(
+            PROJECT_ROOT / "app" / "static" / "sw.js",
+            media_type="application/javascript",
+            headers={"Cache-Control": "no-store", "Service-Worker-Allowed": "/"},
+        )
+
     application.mount("/static", StaticFiles(directory=PROJECT_ROOT / "app" / "static"), name="static")
 
     @application.get("/", include_in_schema=False, response_model=None)
@@ -926,6 +898,7 @@ def create_app(app_env: str | None = None) -> FastAPI:
             return RedirectResponse(url="/login", status_code=307)
         return FileResponse(PROJECT_ROOT / "app" / "static" / "ops.html")
 
+    application.include_router(push_router)
     application.include_router(operations_router)
     application.include_router(public_router)
     application.include_router(viewer_router)

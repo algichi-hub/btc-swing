@@ -1,0 +1,21 @@
+# F5 pasos 1-4 — límites de validación
+- Paso 1: instalación y recepción Android manual ya acreditadas; falta pantalla bloqueada, proceso cerrado, reinicio y revocación, requieren acción del usuario.
+- Paso 2: outbox durable `v5_push_outbox` ya existe en Neon Preview. `persistent_outbox.py` implementa deduplicación por origen, sin detalles privados.
+- Paso 3: `cloud_dispatcher.py` realiza polling en modo lectura (dry-run) y sólo contempla eventos BTC_V5_TEST. Envío automático real bloqueado hasta gate G3/G4; envío manual desde UI sigue operativo.
+- Paso 4: inserción opcional de evento `CYCLE_SHADOW` tras commit OK en worker Preview. Sin despacho, no modifica señales ni Telegram. Requiere configurar flag `PUSH_SHADOW_EVENTS_ENABLED=true` y grant INSERT sobre outbox al worker.
+- No iniciar regresión final ni promocionar Production. No afirmar prueba Android background, SIGKILL Railway, reintentos automáticos o envío de señales hasta ejecutarlos.
+
+## Acta de ejecución de pasos 1–4 — 2026-10-18
+- **Paso 1 — Android:** instalación de PWA y entrega Push manual PASS comunicados por usuario previamente. Ensayos con pantalla bloqueada, reinicio Android, sesión cerrada y revocación real: NOT RUN; requieren teléfono del usuario. Se conserva [acta G5](F5_GATE_EVALUACION_20261018.md).
+- **Paso 2 — Neon:** `v5_push_outbox` ya persistente y aditiva en Preview. `persistent_outbox.py` incorpora clave SHA-256 única, inserción `ON CONFLICT DO NOTHING`, TTL y separación de `CYCLE_SHADOW` de test sintético. `btc_v5_engine_app` tiene exclusivamente INSERT + USAGE de secuencia en la tabla. No se han cambiado esquemas heredados.
+- **Paso 3 — Dispatcher:** servicio Railway Preview aislado `btc-v5-push-dispatcher-preview` (ID `917de0ee-3633-4c3c-b66a-0d07269c27c6`, deploy `834a2087-b10e-4d4a-aff4-cb71a18b315a` SUCCESS). Controles `BTC_PROCESS_ROLE=push_dispatcher`, `PUSH_DISPATCHER_ENABLED=true`, `PUSH_DISPATCHER_REAL_SEND=false`; explora la outbox mediante `FOR UPDATE SKIP LOCKED` y no consume ni envía eventos al estar en dry-run. Entrega real automatizada, recuperación tras fallos y caducidades todavía no acreditadas.
+- **Paso 4 — Shadow:** `app/automation/cloud_worker.py` añade registro idempotente `CYCLE_SHADOW` solamente después de consolidar un ciclo OK y solo con flag `PUSH_SHADOW_EVENTS_ENABLED=true`. Railway motor Preview `btc-v5-engine-preview` desplegado como `ee2fb2c2-9daf-4d77-8458-64b047c9f05c` SUCCESS. No modifica cálculo, no activa Telegram ni envía push de señales.
+- Evidencia CI de validación de integración específica: [security smoke 39127178180](https://github.com/algichi-hub/btc-swing/actions/runs/39127178180) SUCCESS; CI baseline automática [39127178186](https://github.com/algichi-hub/btc-swing/actions/runs/39127178186) SUCCESS. **La regresión formal de salida G5 no se ha ejecutado**.
+- Verificación Neon a las 12:28 UTC: 0 filas CYCLE_SHADOW observadas tras despliegue (siguiente slot posterior pendiente). **Step 4 desplegado pero test de persistencia end-to-end PENDING**, no declarar cierre hasta dato de nuevo ciclo.
+- No se tocaron Production, Raspberry V4 ni eventos reales de notificaciones. F5 Preview conserva Web Push manual probado por el usuario. G3/G4/G5 mantienen sus gates previos.
+
+### Extensión de paso 4 y verificación — 2026-10-18
+- Se ha añadido lectura limitada (máximo 100 registros por ciclo, lookback 15 minutos) de `trade_events` para generar `TRADE_EVENT_SHADOW` con digest de ID y `public_payload={}`, `status=SENT`. Estos registros jamás son enviados por el dispatcher. No se afecta a `trade_events` ni a `trade_signals`.
+- Worker Preview actualizado a commit `471ce5bb8a63c0905affedca891d50b1ce5a9ab2` (Railway `b25a2f56-7235-4108-9f22-3cd0fb7c7386` SUCCESS). Compatibilidad/smoke GitHub Actions: `39127538770` SUCCESS, `39127538906` SUCCESS.
+- A las 12:32 UTC, consulta Neon: **0 filas CYCLE_SHADOW**, último ciclo OK 12:30:16 UTC; queda pendiente observar siguiente ciclo tras último despliegue. No atribuir falso PASS E2E.
+- Emisión automática de eventos operativos reales y dispatcher con Web Push automático **NO ACTIVADOS** por condición explícita `PUSH_DISPATCHER_REAL_SEND=false` hasta verificación y aprobación de G3/G4.
