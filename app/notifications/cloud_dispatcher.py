@@ -31,6 +31,17 @@ def drain_once(limit:int=20) -> dict:
             continue
     return {"state":"DRY_RUN","processed":count}
 
+def polling_seconds() -> int:
+    """Bound idle database polling without modifying the 300-second trading engine."""
+    raw = os.getenv("PUSH_POLL_SECONDS", "30")
+    try:
+        value = int(raw)
+    except ValueError as exc:
+        raise ValueError("PUSH_POLL_SECONDS must be an integer") from exc
+    if not 5 <= value <= 300:
+        raise ValueError("PUSH_POLL_SECONDS must be between 5 and 300")
+    return value
+
 def main():
     if os.getenv("BTC_PROCESS_ROLE")!="push_dispatcher":
         raise RuntimeError("dispatcher role required")
@@ -41,6 +52,7 @@ def main():
     from app.release_guard import enforce_cloud_isolation
     enforce_cloud_isolation(role='push_dispatcher')
     from app.notifications.trade_dispatcher import drain_real_events
+    delay = polling_seconds()
     while True:
         try:
             drain_once()
@@ -48,6 +60,6 @@ def main():
                 drain_real_events()
         except Exception:
             LOG.error("dispatcher cycle failed",exc_info=False)
-        time.sleep(5)
+        time.sleep(delay)
 
 if __name__=="__main__":main()
