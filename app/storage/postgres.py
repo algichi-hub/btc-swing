@@ -11,6 +11,7 @@ import hashlib
 from urllib.parse import urlparse
 import re
 import sqlite3
+from threading import Lock
 from pathlib import Path
 from typing import Any
 
@@ -54,14 +55,18 @@ class PgResult:
 
 
 class PgConnection:
-    def __init__(self, connection: Any):
+    def __init__(self, connection: Any, pooled_context: Any = None):
         self.raw = connection
+        self._pooled_context = pooled_context
 
     def __enter__(self):
-        self.raw.__enter__()
+        if self._pooled_context is None:
+            self.raw.__enter__()
         return self
 
     def __exit__(self, *args):
+        if self._pooled_context is not None:
+            return self._pooled_context.__exit__(*args)
         return self.raw.__exit__(*args)
 
     def execute(self, query: str, params: tuple[Any, ...] = ()) -> PgResult:
@@ -85,6 +90,19 @@ class PgConnection:
         return PgResult(cur, lastrowid)
 
 
+_api_pool = None
+_api_pool_lock = Lock()
+
+
+def close_api_pool() -> None:
+    global _api_pool
+    with _api_pool_lock:
+        pool = _api_pool
+        _api_pool = None
+    if pool is not None:
+        pool.close()
+
+
 def connect_pg() -> PgConnection:
     url = os.environ.get("BTC_DATABASE_URL")
     if not url:
@@ -96,6 +114,20 @@ def connect_pg() -> PgConnection:
     host = urlparse(url).hostname or ""
     # TLS required for Neon; the ephemeral CI postgres:17 service has no TLS.
     ci_local = os.getenv("BTC_TEST_DATABASE") == "YES" and host in {"localhost", "127.0.0.1"}
+    # The Engine and local tests retain independent connections and transactions.
+    if os.getenv("BTC_PROCESS_ROLE") == "api" and not ci_local:
+        global _api_pool
+        if _api_pool is None:
+            with _api_pool_lock:
+                if _api_pool is None:
+                    from psycopg_pool import ConnectionPool
+                    _api_pool = ConnectionPool(
+                        conninfo=url, min_size=0, max_size=2, timeout=10,
+                        kwargs={"row_factory": dict_row, "sslmode": "require", "connect_timeout": 10},
+                    )
+        lease = _api_pool.connection()
+        raw = lease.__enter__()
+        return PgConnection(raw, pooled_context=lease)
     return PgConnection(psycopg.connect(url, row_factory=dict_row,
                 connect_timeout=10, sslmode="disable" if ci_local else "require"))
 
