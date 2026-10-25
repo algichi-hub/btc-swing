@@ -1018,6 +1018,11 @@ async function loadHistory(limit = 100) {
 }
 
 let pnlChartInFlight = false;
+let pnlChartLastPoints = null;
+let pnlChartLastDays = null;
+let pnlChartResizeObserver = null;
+
+
 
 function hidePnlTooltip() {
   const tooltip = byId('pnl-chart-tooltip');
@@ -1082,6 +1087,18 @@ function renderPnlChart(points, days) {
   hidePnlTooltip();
 
   const dataPoints = Array.isArray(points) ? points : [];
+  pnlChartLastPoints = dataPoints;
+  pnlChartLastDays = days;
+  if (!pnlChartResizeObserver && typeof ResizeObserver !== 'undefined') {
+    pnlChartResizeObserver = new ResizeObserver(() => {
+      if (pnlChartLastPoints && svg.clientWidth > 0 &&
+          Math.abs(svg.clientWidth - Number(svg.getAttribute('viewBox')?.split(' ')[2])) > 1) {
+        renderPnlChart(pnlChartLastPoints, pnlChartLastDays);
+      }
+    });
+    pnlChartResizeObserver.observe(svg);
+  }
+
   if (dataPoints.length === 0) {
     svg.classList.add('hidden');
     empty.classList.remove('hidden');
@@ -1110,10 +1127,7 @@ function renderPnlChart(points, days) {
     }
   }
 
-  const svgWidth = 800;
-  const svgHeight = 260;
-  svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
-  svg.setAttribute('preserveAspectRatio', 'none');
+
 
   const padLeft = 70;
   const padRight = 30;
