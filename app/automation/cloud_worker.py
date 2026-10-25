@@ -260,15 +260,19 @@ def main() -> None:
     signal.signal(signal.SIGTERM, on_shutdown)
     signal.signal(signal.SIGINT, on_shutdown)
     _telemetry(severity='INFO',code='WORKER_STARTED',message='Scheduler initialized')
+    last_scheduled_slot = None
     while not stop:
-        now=datetime.now(timezone.utc)
-        if run_once(cycle,now=now)=='ERROR':
-            _LOG.warning('Market cycle failed; next slot/retry will handle recovery')
-        # The manual request uses the same cycle code and DB-wide lock.
+        now = datetime.now(timezone.utc)
+        slot = cycle_key(now)
+        # Keep scheduled Engine execution at its original five-minute cadence.
+        # Only poll manual requests faster; never rerun scheduled cycles every 2 s.
+        if slot != last_scheduled_slot:
+            last_scheduled_slot = slot
+            if run_once(cycle, now=now) == 'ERROR':
+                _LOG.warning('Market cycle failed; next slot/retry will handle recovery')
         run_requested_cycle(cycle)
-        # At most one slot every five minutes; don't hammer DB on crashes.
-        sleep_time=max(1,min(10,INTERVAL_SECONDS-int(time.time())%INTERVAL_SECONDS))
-        time.sleep(sleep_time)
+        # Manual request detection within ~2 s when Engine is idle.
+        time.sleep(2)
 
 
 if __name__ == '__main__':
