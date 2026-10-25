@@ -4,7 +4,7 @@ This code doesn't place exchange orders. TradingAutomationEngine retains V4's
 paper-trade behavior. Telegram remains disabled in F3; removed in F5.
 
 An advisory *session* lock serializes workers; a durable cycle journal prevents
-repeated successful cycles in the same UTC 300-second slot. A crash before the
+repeated successful cycles in the same UTC 600-second slot. A crash before the
 cycle commits OK may cause a retry: downstream event inserts must be idempotent.
 """
 from __future__ import annotations
@@ -19,13 +19,13 @@ from pathlib import Path
 from typing import Callable
 
 LOCK_KEY = 5032026
-INTERVAL_SECONDS = 300
+INTERVAL_SECONDS = 600
 SERVICE_KEY = 'btc-v5-engine'
 _LOG = logging.getLogger('btc_v5.worker')
 
 
 def cycle_key(now: datetime) -> str:
-    """UTC floor to exact five-minute interval; unaffected by local DST."""
+    """UTC floor to exact ten-minute interval; unaffected by local DST."""
     if now.tzinfo is None or now.utcoffset() is None:
         raise ValueError('Timezone-aware UTC instant required')
     slot = int(now.timestamp()) // INTERVAL_SECONDS * INTERVAL_SECONDS
@@ -277,7 +277,7 @@ def main() -> None:
     while not stop:
         now = datetime.now(timezone.utc)
         slot = cycle_key(now)
-        # Keep scheduled Engine execution at its original five-minute cadence.
+        # Keep scheduled Engine execution at its configured ten-minute cadence.
         # Only poll manual requests faster; never rerun scheduled cycles every 2 s.
         if slot != last_scheduled_slot:
             last_scheduled_slot = slot
