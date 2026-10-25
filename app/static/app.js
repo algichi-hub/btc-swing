@@ -1898,19 +1898,16 @@ async function refreshDashboard(options = { scheduleNext: true }) {
     renderRange(payload.market?.price, payload.swing_range);
     const marketFreshness = payload.market_freshness;
     const freshMarket = marketFreshness?.status === 'FRESH' && marketFreshness?.is_stale === false;
-    // Never present a trade signal as actionable if the source candle is stale,
-    // missing, in the future, or the freshness field is absent (old API).
-    renderSignal(freshMarket ? (payload.signal || {}) : { state: 'NO_TRADE', side: null });
-    renderTradePlan(freshMarket ? payload.signal?.state : 'NO_TRADE',
-      freshMarket ? payload.trade_plan : null,
-      freshMarket ? payload.potential_trade_plan : null);
+    // Freshness is informational; render the Engine's signals without modification.
+    renderSignal(payload.signal || {});
+    renderTradePlan(payload.signal?.state, payload.trade_plan, payload.potential_trade_plan);
     renderTradeDiagnostics(payload.trade_diagnostics || null);
 
     lastValidTimestampIso = payload.timestamp || lastValidTimestampIso;
     byId('status').textContent = freshMarket ? 'ONLINE' : (marketFreshness?.status === 'STALE' ? 'DATOS DE MERCADO OBSOLETOS' : 'FRESCURA NO VERIFICADA');
     byId('updated-at').textContent = freshMarket
       ? `Actualizado ${formatTimeFromIso(lastValidTimestampIso)}`
-      : (marketFreshness?.status === 'STALE' ? `Señales bloqueadas · última vela 1h: ${formatTimeFromIso(marketFreshness?.last_candle_close)}` : 'Señales bloqueadas · sin verificación de la última vela 1h');
+      : (marketFreshness?.status === 'STALE' ? `Última vela 1h: ${formatTimeFromIso(marketFreshness?.last_candle_close)}` : 'Frescura de vela 1h no verificada');
 
     try {
       await loadAutomationStatus();
