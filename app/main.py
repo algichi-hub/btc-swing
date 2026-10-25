@@ -613,8 +613,31 @@ def update_app_settings(payload: SettingsUpdatePayload) -> dict[str, Any]:
 
 
 @viewer_router.get("/dashboard")
-def dashboard() -> dict:
-    return build_dashboard_payload()
+def dashboard(refresh: bool = False) -> dict:
+    # The normal read path never contacts Hyperliquid or reruns the strategy.
+    if refresh:
+        return build_dashboard_payload()
+    snapshot = trade_repository.get_latest_engine_snapshot()
+    if snapshot is None:
+        raise HTTPException(status_code=503, detail="Engine snapshot unavailable")
+    payload = snapshot["data"]
+    if not isinstance(payload, dict):
+        raise HTTPException(status_code=503, detail="Engine snapshot invalid")
+    timestamp = _parse_iso_timestamp(snapshot["created_at"])
+    now = datetime.now(timezone.utc)
+    # Two 10-minute cycles, allowing for jitter. Never trust a future-dated snapshot.
+    snapshot_fresh = timestamp is not None and timedelta(0) <= now - timestamp <= timedelta(minutes=20)
+    original_market_freshness = payload.get("market_freshness")
+    candle_fresh = isinstance(original_market_freshness, dict) and original_market_freshness.get("status") == "FRESH" and original_market_freshness.get("is_stale") is False
+    payload = dict(payload)
+    payload["snapshot_created_at"] = snapshot["created_at"]
+    payload["snapshot_stale"] = not snapshot_fresh
+    if not (snapshot_fresh and candle_fresh):
+        payload["market_freshness"] = {"status": "STALE", "is_stale": True, "last_candle_close": (original_market_freshness or {}).get("last_candle_close") if isinstance(original_market_freshness, dict) else None}
+        payload["signal"] = {"state": "NO_TRADE", "side": None}
+        payload["trade_plan"] = None
+        payload["potential_trade_plan"] = None
+    return payload
 
 
 @viewer_router.get("/history")
