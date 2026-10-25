@@ -152,7 +152,7 @@ h1 {
 	appearance: none;
 	border: none;
 	border-radius: 0;
-	background: #7fd8ff;
+	background: transparent;
 	padding: 0;
 	cursor: pointer;
 }
@@ -160,7 +160,7 @@ h1 {
 .hourly-volume-bar--up { background: #2bc68a; }
 .hourly-volume-bar--down { background: #ed626b; }
 .hourly-volume-bar--flat { background: #93a1b5; }
-.hourly-volume-bar--unknown { background: #7fd8ff; }
+.hourly-volume-bar--unknown { background: transparent; }
 
 .hourly-volume-legend { margin: 8px 0 0; font-size: 11px; line-height: 1.5; color: #a4b2c5; }
 .hourly-volume-legend .up { color: #2bc68a; }
