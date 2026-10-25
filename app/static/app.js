@@ -2330,8 +2330,8 @@ async function bootstrap() {
       if (!enqueued.ok) throw new Error('No se pudo solicitar la actualización al Engine');
       const { id } = await enqueued.json();
       let finished = false;
-      for (let attempt = 0; attempt < 36; attempt++) {
-        await new Promise(resolve => window.setTimeout(resolve, 5000));
+      for (let attempt = 0; attempt < 90; attempt++) {
+        await new Promise(resolve => window.setTimeout(resolve, 2000));
         const check = await fetch('/api/engine/manual-refresh/' + encodeURIComponent(id), { cache: 'no-store' });
         if (!check.ok) throw new Error('No se pudo consultar el ciclo del Engine');
         const state = await check.json();
