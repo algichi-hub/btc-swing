@@ -73,6 +73,7 @@ def compute_volume_24h_hourly(
             "timestamp": _iso_from_ms(candle.open_time_ms),
             "volume_btc": round(candle.volume, 8),
             "volume_usd": round(candle.volume * candle.close, 2),
+            "candle_direction": "UP" if candle.close > candle.open else ("DOWN" if candle.close < candle.open else "FLAT"),
         }
         for candle in selected
     ]
