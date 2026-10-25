@@ -81,7 +81,7 @@ def get_worker_health(now: datetime | None = None, *, max_age_seconds: int = 660
             'cycle_key':row['cycle_key']}
 
 
-def run_once(run_engine: Callable[[], object], *, now: datetime | None = None) -> str:
+def run_once(run_engine: Callable[[], object], *, now: datetime | None = None, manual_request_id: str | None = None) -> str:
     """Return OK, ERROR, SKIPPED or BUSY; serialize across processes and redeploys.
 
     Session lock survives commits from other repository connections, and is
@@ -91,7 +91,7 @@ def run_once(run_engine: Callable[[], object], *, now: datetime | None = None) -
         raise RuntimeError('Cloud worker requires PostgreSQL backend')
     if os.getenv('TELEGRAM_ENABLED', '').strip().lower() in {'1','true','yes','on'}:
         raise RuntimeError('Cloud worker prohibits Telegram in F3')
-    key = cycle_key(now or datetime.now(timezone.utc))
+    key = 'manual:' + manual_request_id if manual_request_id else cycle_key(now or datetime.now(timezone.utc))
     started = time.monotonic()
     with _connect() as lock_conn:
         acquired = lock_conn.execute('SELECT pg_try_advisory_lock(%s) AS locked', (LOCK_KEY,)).fetchone()['locked']
@@ -184,6 +184,43 @@ def _build_engine():
     return run_cycle
 
 
+def run_requested_cycle(run_engine: Callable[[], object]) -> str | None:
+    """Consume at most one durable request, with the same advisory lock and engine."""
+    with _connect() as conn:
+        pending = conn.execute("""SELECT id FROM manual_cycle_requests
+                                   WHERE status='PENDING'
+                                   ORDER BY requested_at LIMIT 1""").fetchone()
+    if pending is None:
+        return None
+    request_id = str(pending['id'])
+    # Claim is serialized even across worker instances by the unique PENDING index
+    # and a row transition; run_once has the session advisory lock as second gate.
+    with _connect() as conn:
+        claimed = conn.execute("""UPDATE manual_cycle_requests SET status='RUNNING', started_at=now()
+                                  WHERE id=%s AND status='PENDING' RETURNING id""",
+                               (request_id,)).fetchone()
+    if claimed is None:
+        return None
+    status = run_once(run_engine, manual_request_id=request_id)
+    if status == 'BUSY':
+        with _connect() as conn:
+            conn.execute("""UPDATE manual_cycle_requests SET status='PENDING',started_at=NULL
+                            WHERE id=%s AND status='RUNNING'""", (request_id,))
+        return 'BUSY'
+    if status == 'SKIPPED':
+        # Journal already committed OK, e.g. crash after completing the cycle.
+        status = 'OK'
+    with _connect() as conn:
+        snapshot = conn.execute("""SELECT id,created_at FROM engine_snapshots
+                                   ORDER BY id DESC LIMIT 1""").fetchone() if status == 'OK' else None
+        conn.execute("""UPDATE manual_cycle_requests
+                        SET status=%s,completed_at=now(),snapshot_id=%s,snapshot_at=%s
+                        WHERE id=%s AND status='RUNNING'""",
+                     (status, snapshot['id'] if snapshot else None,
+                      snapshot['created_at'] if snapshot else None, request_id))
+    return status
+
+
 def main() -> None:
     if os.environ.get('BTC_PROCESS_ROLE') != 'worker':
         raise RuntimeError('BTC_PROCESS_ROLE=worker required')
@@ -205,6 +242,8 @@ def main() -> None:
         now=datetime.now(timezone.utc)
         if run_once(cycle,now=now)=='ERROR':
             _LOG.warning('Market cycle failed; next slot/retry will handle recovery')
+        # The manual request uses the same cycle code and DB-wide lock.
+        run_requested_cycle(cycle)
         # At most one slot every five minutes; don't hammer DB on crashes.
         sleep_time=max(1,min(10,INTERVAL_SECONDS-int(time.time())%INTERVAL_SECONDS))
         time.sleep(sleep_time)
