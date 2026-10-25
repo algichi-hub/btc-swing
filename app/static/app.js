@@ -1884,7 +1884,7 @@ async function refreshDashboard(options = { scheduleNext: true }) {
   refreshInFlight = true;
 
   try {
-    const response = await fetch(options.live ? '/api/dashboard?refresh=true' : '/api/dashboard', { cache: 'no-store' });
+    const response = await fetch('/api/dashboard', { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(await response.text());
     }
@@ -1904,10 +1904,8 @@ async function refreshDashboard(options = { scheduleNext: true }) {
     renderTradeDiagnostics(payload.trade_diagnostics || null);
 
     lastValidTimestampIso = payload.timestamp || lastValidTimestampIso;
-    byId('status').textContent = freshMarket ? 'ONLINE' : (marketFreshness?.status === 'STALE' ? 'DATOS DE MERCADO OBSOLETOS' : 'FRESCURA NO VERIFICADA');
-    byId('updated-at').textContent = freshMarket
-      ? `Actualizado ${formatTimeFromIso(lastValidTimestampIso)}`
-      : (marketFreshness?.status === 'STALE' ? `Última vela 1h: ${formatTimeFromIso(marketFreshness?.last_candle_close)}` : 'Frescura de vela 1h no verificada');
+    byId('status').textContent = '';
+    byId('updated-at').textContent = `Datos: ${formatDateTimeFromIso(payload.snapshot_created_at || payload.timestamp)} (Neon)`;
 
     try {
       await loadAutomationStatus();
@@ -2307,7 +2305,27 @@ async function bootstrap() {
     updateButton.disabled = true;
     updateButton.textContent = 'Actualizando…';
     try {
-      await refreshDashboard({ scheduleNext: true, live: true });
+      if (!currentCsrfToken) await fetchCsrfToken();
+      const enqueued = await fetch('/api/engine/manual-refresh', { method: 'POST', headers: getCsrfHeaders() });
+      if (!enqueued.ok) throw new Error('No se pudo solicitar la actualización al Engine');
+      const { id } = await enqueued.json();
+      let finished = false;
+      for (let attempt = 0; attempt < 36; attempt++) {
+        await new Promise(resolve => window.setTimeout(resolve, 5000));
+        const check = await fetch('/api/engine/manual-refresh/' + encodeURIComponent(id), { cache: 'no-store' });
+        if (!check.ok) throw new Error('No se pudo consultar el ciclo del Engine');
+        const state = await check.json();
+        if (state.status === 'ERROR') throw new Error('El ciclo del Engine terminó con error');
+        if (state.status !== 'OK') continue;
+        await refreshDashboard({ scheduleNext: true });
+        byId('updated-at').textContent = `Datos: ${formatDateTimeFromIso(state.snapshot_at)} (actualizado)`;
+        finished = true;
+        break;
+      }
+      if (!finished) throw new Error('El Engine aún no ha finalizado; consulta el siguiente snapshot');
+    } catch (error) {
+      console.error('Manual Engine refresh:', error);
+      window.alert(error.message || 'No se pudo completar la actualización');
     } finally {
       updateButton.disabled = false;
       updateButton.textContent = 'Actualizar';
