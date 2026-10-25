@@ -1129,6 +1129,13 @@ function renderPnlChart(points, days) {
 
 
 
+  // Keep the SVG coordinate system aligned with its rendered width so axis
+  // text is never stretched horizontally on narrow screens.
+  const svgWidth = Math.max(1, svg.clientWidth || 800);
+  const svgHeight = 260;
+  svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
+  svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+
   const padLeft = 70;
   const padRight = 30;
   const padTop = 25;
