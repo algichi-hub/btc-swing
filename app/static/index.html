@@ -21,14 +21,14 @@
           <span id="auth-user" class="pill"></span>
           <button id="logout-btn" type="button" class="btn-logout">Cerrar sesión</button>
         </div>
-        <span id="status" class="pill">Cargando…</span>
-        <span id="updated-at" class="meta">Esperando datos…</span>
+        <span id="status" class="hidden" aria-hidden="true"></span>
+        <span id="updated-at" class="meta">Datos: —</span>
       </div>
     </header>
 
     <section id="view-home" class="view">
       <div style="display:flex;justify-content:flex-end;margin:0 0 12px">
-        <button type="button" id="home-update-button" class="home-update-button" aria-label="Actualizar ahora el dashboard desde Hyperliquid">Actualizar</button>
+        <button type="button" id="home-update-button" class="home-update-button" aria-label="Solicitar un ciclo de actualización al Engine">Actualizar</button>
       </div>
       <!-- 1. Precio actual / Volumen / Stoch RSI -->
       <section class="hero">
@@ -410,7 +410,7 @@
     </div>
     <p id="pnl-detail-empty" class="signal-reason hidden">No hay datos de PnL para este período.</p>
   </div>
-  <script src="/static/app.js?v=g6-freshness-info-only-1"></script>
+  <script src="/static/app.js?v=g6-engine-manual-cycle-1"></script>
   <script src="/static/pwa-install.js" defer></script>
 </body>
 </html>
