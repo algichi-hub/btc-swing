@@ -183,8 +183,7 @@ class SettingsService:
         if key not in SETTING_SPECS:
             raise SettingsValidationError(f"Unknown setting: {key}")
 
-        self.apply_defaults()
-
+        # Read-only access: missing keys are resolved from in-memory defaults.
         with connect(self.database_path) as conn:
             row = conn.execute("SELECT value FROM app_settings WHERE key = ?", (key,)).fetchone()
 
@@ -194,7 +193,7 @@ class SettingsService:
         return self._coerce_value(key, row["value"])
 
     def get_all(self) -> dict[str, SettingValue]:
-        self.apply_defaults()
+        # Do not run initialization writes on normal reads.
         keys = list(SETTING_SPECS.keys())
         placeholders = ",".join("?" for _ in keys)
 
