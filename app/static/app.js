@@ -640,12 +640,12 @@ function renderHourlyVolumeChart(volume24hHourly) {
     barElement.className = 'hourly-volume-bar';
     const direction = ['UP', 'DOWN', 'FLAT'].includes(bar.candle_direction) ? bar.candle_direction : 'UNKNOWN';
     barElement.classList.add(`hourly-volume-bar--${direction.toLowerCase()}`);
-    barElement.setAttribute('aria-label', `Volumen ${tooltipTime || '1h'}: ${asCompactUsd(volumeUsd)}; dirección ${direction === 'UP' ? 'vela alcista' : direction === 'DOWN' ? 'vela bajista' : direction === 'FLAT' ? 'vela sin cambio' : 'no disponible'}`);
 
     const heightPct = (volumeUsd / safeMaxUsd) * 100;
     barElement.style.height = `${heightPct}%`;
 
     const tooltipTime = formatTimeFromIso(bar.timestamp);
+    barElement.setAttribute('aria-label', `Volumen ${tooltipTime || '1h'}: ${asCompactUsd(volumeUsd)}; dirección ${direction === 'UP' ? 'vela alcista' : direction === 'DOWN' ? 'vela bajista' : direction === 'FLAT' ? 'vela sin cambio' : 'no disponible'}`);
     barElement.dataset.time = tooltipTime;
     barElement.dataset.usd = asCompactUsd(volumeUsd);
     barElement.dataset.btc = asCompactBtc(volumeBtc);
