@@ -305,7 +305,11 @@ async def lifespan(_: FastAPI):
         if os.environ.get('BTC_DB_BACKEND') != 'postgres':
             raise RuntimeError('Cloud API requires PostgreSQL')
         # Cloud API never launches market scheduler, replay, bootstrap, or DDL.
-        yield
+        try:
+            yield
+        finally:
+            from app.storage.postgres import close_api_pool
+            close_api_pool()
         return
     initialize(settings_service.database_path)
     settings_service.apply_defaults()
