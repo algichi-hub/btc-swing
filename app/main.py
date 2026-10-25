@@ -209,7 +209,7 @@ def recover_downtime_opportunity(
     manager.restore_setup(setup_ctx)
 
 
-def build_dashboard_payload() -> dict:
+def build_dashboard_payload(*, read_only: bool = False) -> dict:
     timings: dict[str, float] = {}
     stage_start = perf_counter()
     client = HyperliquidClient(settings.info_url)
@@ -276,7 +276,9 @@ def build_dashboard_payload() -> dict:
         min_operational_range_pct=min_operational_range_pct,
         volume_baseline_period=volume_baseline_period,
         volume_confirmation_threshold=volume_confirmation_threshold,
-        setup_context_manager=setup_context_manager,
+        # A manually requested refresh must never modify the Engine's process
+        # context or persist operational opportunities in Neon.
+        setup_context_manager=(SetupContextManager(repository=None) if read_only else setup_context_manager),
     )
     payload['market_freshness'] = market_freshness
     timings['indicators_ms'] = round((perf_counter() - stage_start) * 1000, 1)
@@ -620,7 +622,9 @@ def update_app_settings(payload: SettingsUpdatePayload) -> dict[str, Any]:
 def dashboard(refresh: bool = False) -> dict:
     # The normal read path never contacts Hyperliquid or reruns the strategy.
     if refresh:
-        return build_dashboard_payload()
+        payload = build_dashboard_payload(read_only=True)
+        payload['manual_refresh_read_only'] = True
+        return payload
     snapshot = trade_repository.get_latest_engine_snapshot()
     if snapshot is None:
         raise HTTPException(status_code=503, detail="Engine snapshot unavailable")
