@@ -607,6 +607,32 @@ function showHourlyVolumeTooltip(target) {
   tooltip.style.left = `${left}px`;
 }
 
+let directionCache = null;
+let directionPromise = null;
+async function colorVolumeBars() {
+  const container = document.getElementById('hourly-volume-bars');
+  if (!container) return;
+  try {
+    if (!directionCache) {
+      if (!directionPromise) directionPromise = fetch('/api/display/hourly-candle-directions').then(r => {
+        if (!r.ok) throw new Error('OHLC unavailable');
+        return r.json();
+      }).finally(() => { directionPromise = null; });
+      const data = await directionPromise;
+      directionCache = new Map(data.bars.map(bar => [bar.timestamp, bar.candle_direction]));
+      window.setTimeout(() => { directionCache = null; }, 600000);
+    }
+    container.querySelectorAll('[data-candle-time]').forEach(bar => {
+      const value = directionCache.get(bar.dataset.candleTime);
+      if (!['UP', 'DOWN', 'FLAT'].includes(value)) return;
+      bar.classList.remove('hourly-volume-bar--unknown');
+      bar.classList.add('hourly-volume-bar--' + value.toLowerCase());
+    });
+  } catch (error) {
+    console.debug('Hourly colors unavailable', error);
+  }
+}
+
 function renderHourlyVolumeChart(volume24hHourly) {
   const barsContainer = byId('hourly-volume-bars');
   const maxLabel = byId('hourly-volume-max');
@@ -646,6 +672,7 @@ function renderHourlyVolumeChart(volume24hHourly) {
 
     const tooltipTime = formatTimeFromIso(bar.timestamp);
     barElement.setAttribute('aria-label', `Volumen ${tooltipTime || '1h'}: ${asCompactUsd(volumeUsd)}; dirección ${direction === 'UP' ? 'vela alcista' : direction === 'DOWN' ? 'vela bajista' : direction === 'FLAT' ? 'vela sin cambio' : 'no disponible'}`);
+    barElement.dataset.candleTime = bar.timestamp || '';
     barElement.dataset.time = tooltipTime;
     barElement.dataset.usd = asCompactUsd(volumeUsd);
     barElement.dataset.btc = asCompactBtc(volumeBtc);
@@ -662,6 +689,7 @@ function renderHourlyVolumeChart(volume24hHourly) {
 
     barsContainer.appendChild(barElement);
   });
+  void colorVolumeBars();
 }
 
 function renderMarket(market) {
