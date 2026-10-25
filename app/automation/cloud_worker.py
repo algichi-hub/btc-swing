@@ -193,6 +193,10 @@ def run_requested_cycle(run_engine: Callable[[], object]) -> str | None:
     if pending is None:
         return None
     request_id = str(pending['id'])
+    with _connect() as conn:
+        previous = conn.execute('SELECT max(id) AS id FROM engine_snapshots').fetchone()
+        prior_snapshot_id = int(previous['id'] or 0)
+
     # Claim is serialized even across worker instances by the unique PENDING index
     # and a row transition; run_once has the session advisory lock as second gate.
     with _connect() as conn:
@@ -208,11 +212,14 @@ def run_requested_cycle(run_engine: Callable[[], object]) -> str | None:
                             WHERE id=%s AND status='RUNNING'""", (request_id,))
         return 'BUSY'
     if status == 'SKIPPED':
-        # Journal already committed OK, e.g. crash after completing the cycle.
+        # A replayed successful request must not start a second Engine cycle.
         status = 'OK'
     with _connect() as conn:
         snapshot = conn.execute("""SELECT id,created_at FROM engine_snapshots
                                    ORDER BY id DESC LIMIT 1""").fetchone() if status == 'OK' else None
+        if status == 'OK' and (snapshot is None or int(snapshot['id']) <= prior_snapshot_id):
+            status = 'ERROR'
+            snapshot = None
         conn.execute("""UPDATE manual_cycle_requests
                         SET status=%s,completed_at=now(),snapshot_id=%s,snapshot_at=%s
                         WHERE id=%s AND status='RUNNING'""",
