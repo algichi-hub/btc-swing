@@ -657,12 +657,9 @@ def dashboard(refresh: bool = False) -> dict:
     payload["snapshot_stale"] = not snapshot_fresh
     if not (snapshot_fresh and candle_fresh):
         # Missing candle metadata is UNKNOWN, not proof of stale market data.
-        # Fail closed either way; never enable signals on unverified snapshots.
+        # Informational only: never modify Engine signals, plans, or persisted opportunities.
         freshness_status = "STALE" if not snapshot_fresh or (isinstance(original_market_freshness, dict) and original_market_freshness.get("status") == "STALE") else "UNKNOWN"
         payload["market_freshness"] = {"status": freshness_status, "is_stale": True, "last_candle_close": (original_market_freshness or {}).get("last_candle_close") if isinstance(original_market_freshness, dict) else None}
-        payload["signal"] = {"state": "NO_TRADE", "side": None}
-        payload["trade_plan"] = None
-        payload["potential_trade_plan"] = None
     return payload
 
 
