@@ -2,4 +2,4 @@
 -r requirements-f2.lock
 pywebpush==2.5.0
 cryptography==47.0.0
-psycopg-pool==3.2.12
+psycopg-pool==3.2.8
