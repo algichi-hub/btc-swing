@@ -1597,3 +1597,30 @@ h1 {
 .recover-link { margin-top: 15px; color: #9fc4fb; border: 0; padding: 6px 0; background: transparent; cursor: pointer; text-align: left; text-decoration: underline; }
 #recoveryForm { margin-top: 18px; }
 #recoveryForm h2 { font-size: 18px; }
+
+/* G6: compact PnL and detailed landscape fullscreen view */
+.pnl-chart-compact { cursor:pointer; touch-action:pan-y; }
+.pnl-chart-compact:focus-visible { outline:2px solid #9ec5ff; outline-offset:3px; }
+.pnl-chart-compact .pnl-chart-svg { height:150px; }
+.pnl-chart-hint { text-align:center; color:#93a5bc; font-size:12px; margin:8px 0 0; }
+.pnl-detail-active { overflow:hidden; }
+.pnl-detail-modal {
+  position:fixed; inset:0; z-index:5000; background:#090f1b;
+  color:#e8eef8; padding: max(8px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+  display:flex; flex-direction:column; gap:8px; width:100%; height:100dvh; box-sizing:border-box;
+}
+.pnl-detail-modal.hidden { display:none !important; }
+.pnl-detail-header { display:flex; gap:12px; align-items:center; justify-content:space-between; flex-shrink:0; }
+.pnl-detail-header strong { white-space:nowrap; font-size:15px; }
+.pnl-detail-periods { display:flex; gap:5px; }
+.pnl-detail-periods button, #pnl-detail-close { background:#172439; border:1px solid #32435c; color:#e7edf7; padding:8px 14px; border-radius:9px; cursor:pointer; font-size:14px; }
+.pnl-detail-periods button.active { background:#35588a; border-color:#83b7ed; }
+.pnl-detail-plot { position:relative; flex:1; min-height:0; width:100%; background:#0c121d; border-radius:12px; overflow:hidden; }
+.pnl-detail-svg { width:100%; height:100%; display:block; }
+.pnl-detail-rotate { margin:auto; text-align:center; max-width:360px; line-height:1.6; }
+.pnl-detail-plot .pnl-chart-tooltip { top:30px; transform:translateX(-50%); }
+@media (max-height:440px) and (orientation:landscape) {
+ .pnl-detail-header { gap:6px; }
+ .pnl-detail-header strong { font-size:13px; }
+ .pnl-detail-periods button, #pnl-detail-close { padding:5px 12px; }
+}
