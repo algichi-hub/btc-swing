@@ -45,6 +45,7 @@ let refreshInFlight = false;
 let historyRefreshInFlight = false;
 let refreshIntervalMs = DEFAULT_REFRESH_MS;
 let lastValidTimestampIso = null;
+let lastDisplayedSnapshotAt = null;
 const AUTOMATION_STALE_THRESHOLD_MS = 10 * 60 * 1000;
 const TELEGRAM_TEST_IDLE_TEXT = 'ENVIAR MENSAJE DE PRUEBA';
 const TELEGRAM_TEST_BUSY_TEXT = 'Enviando...';
@@ -1915,6 +1916,7 @@ async function refreshDashboard(options = { scheduleNext: true }) {
     renderTradeDiagnostics(payload.trade_diagnostics || null);
 
     lastValidTimestampIso = payload.timestamp || lastValidTimestampIso;
+    lastDisplayedSnapshotAt = payload.snapshot_created_at || payload.timestamp || null;
     byId('status').textContent = '';
     byId('updated-at').textContent = `Datos: ${formatDashboardDataTime(payload.snapshot_created_at || payload.timestamp)} (Neon)`;
 
@@ -1937,7 +1939,7 @@ async function refreshDashboard(options = { scheduleNext: true }) {
     byId('status').textContent = '';
     const fallback = lastValidTimestampIso
       ? `Datos: ${formatDashboardDataTime(lastValidTimestampIso)} (Neon)`
-      : 'Datos temporalmente no actualizados';
+      : 'Datos: —';
     byId('updated-at').textContent = fallback;
     console.error(error);
     return false;
@@ -2341,7 +2343,9 @@ async function bootstrap() {
           if (!rendered) await new Promise(resolve => window.setTimeout(resolve, 500));
         }
         if (!rendered) throw new Error('Snapshot guardado, pero no se pudo actualizar la pantalla');
-        byId('updated-at').textContent = `Datos: ${formatDashboardDataTime(state.snapshot_at)} (actualizado)`;
+        if (lastDisplayedSnapshotAt && Date.parse(lastDisplayedSnapshotAt) === Date.parse(state.snapshot_at)) {
+          byId('updated-at').textContent = `Datos: ${formatDashboardDataTime(state.snapshot_at)} (actualizado)`;
+        }
         finished = true;
         break;
       }
