@@ -2206,20 +2206,26 @@ function attachRecoveryCodes() {
 }
 
 async function bootstrap() {
+  // Both reads run concurrently. Private data still waits for validated auth.
+  const csrfPromise = fetchCsrfToken();
   const user = await checkAuth();
   if (!user) {
     return;
   }
 
-  // Keep CSRF token ready before account/settings mutations.
-  await fetchCsrfToken();
-
   attachNavigation();
-  attachSettingsForm();
-  attachPasswordChange();
-  attachRecoveryCodes();
-  attachTelegramTestButton();
-  attachDatabaseReset();
+  // Do not enable protected mutations until a valid CSRF token is available.
+  void csrfPromise.then((token) => {
+    if (!token) {
+      console.warn('CSRF unavailable: protected actions remain disabled.');
+      return;
+    }
+    attachSettingsForm();
+    attachPasswordChange();
+    attachRecoveryCodes();
+    attachTelegramTestButton();
+    attachDatabaseReset();
+  });
   attachTradeDiagnosticsToggle();
   document.addEventListener('click', () => {
     hideHourlyVolumeTooltip();
