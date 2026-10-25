@@ -28,4 +28,4 @@ def test_ui_uses_manual_worker_queue_and_neon_timestamp():
     assert "fetch(options.live ? '/api/dashboard?refresh=true'" not in js
     html = Path("app/static/index.html").read_text(encoding="utf-8")
     assert 'id="status" class="hidden"' in html
-    assert "app.js?v=g6-engine-manual-cycle-1" in html
+    assert "app.js?v=g6-engine-manual-cycle-2" in html
