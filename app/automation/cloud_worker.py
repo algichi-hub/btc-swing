@@ -150,8 +150,21 @@ def run_once(run_engine: Callable[[], object], *, now: datetime | None = None, m
                     # Record only exception type and PostgreSQL SQLSTATE, never SQL, URLs or credentials.
                     _LOG.warning('F5 shadow outbox failed: %s / SQLSTATE %s; trading unaffected',
                                  type(exc).__name__, getattr(exc, 'sqlstate', None) or 'N/A')
-            _heartbeat(key=key,status='OK',success=True,details='completed')
-            _telemetry(severity='INFO',code='CYCLE_COMPLETED',key=key,message='OK')
+            # One transaction/connection for completion bookkeeping instead of
+            # two sequential PostgreSQL connection acquisitions. Keep both
+            # heartbeat and audit-log persistence before reporting success.
+            with _connect() as conn:
+                conn.execute("""INSERT INTO worker_heartbeat
+                                (worker_key,last_seen_at,last_success_at,status,cycle_key,details)
+                                VALUES(%s,now(),now(),'OK',%s,'completed')
+                                ON CONFLICT(worker_key) DO UPDATE SET
+                                  last_seen_at=EXCLUDED.last_seen_at,
+                                  last_success_at=EXCLUDED.last_success_at,
+                                  status=EXCLUDED.status,cycle_key=EXCLUDED.cycle_key,
+                                  details=EXCLUDED.details""", (SERVICE_KEY,key))
+                conn.execute("""INSERT INTO operational_logs(service,severity,cycle_key,code,message)
+                                VALUES(%s,'INFO',%s,'CYCLE_COMPLETED','OK')""",
+                             (SERVICE_KEY,key))
             return 'OK'
         finally:
             # pg_advisory_unlock is session-scoped, not transaction-scoped.
