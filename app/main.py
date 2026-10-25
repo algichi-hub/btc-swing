@@ -280,7 +280,7 @@ def build_dashboard_payload() -> dict:
     )
     payload['market_freshness'] = market_freshness
     timings['indicators_ms'] = round((perf_counter() - stage_start) * 1000, 1)
-    logging.getLogger(__name__).info('dashboard_stage_timings %s', timings)
+    logging.getLogger('uvicorn.error').info('dashboard_stage_timings %s', timings)
     return payload
 
 
