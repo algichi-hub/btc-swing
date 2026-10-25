@@ -1889,7 +1889,7 @@ function scheduleNextRefresh() {
 
 async function refreshDashboard(options = { scheduleNext: true }) {
   if (refreshInFlight) {
-    return;
+    return false;
   }
 
   refreshInFlight = true;
@@ -1932,6 +1932,7 @@ async function refreshDashboard(options = { scheduleNext: true }) {
       await loadHistory();
       await loadPnlChart();
     }
+    return true;
   } catch (error) {
     byId('status').textContent = '';
     const fallback = lastValidTimestampIso
@@ -1939,6 +1940,7 @@ async function refreshDashboard(options = { scheduleNext: true }) {
       : 'Datos temporalmente no actualizados';
     byId('updated-at').textContent = fallback;
     console.error(error);
+    return false;
   } finally {
     refreshInFlight = false;
     if (options.scheduleNext !== false) {
@@ -2333,7 +2335,12 @@ async function bootstrap() {
         const state = await check.json();
         if (state.status === 'ERROR') throw new Error('El ciclo del Engine terminó con error');
         if (state.status !== 'OK') continue;
-        await refreshDashboard({ scheduleNext: true });
+        let rendered = false;
+        for (let retry = 0; retry < 10 && !rendered; retry++) {
+          rendered = await refreshDashboard({ scheduleNext: true });
+          if (!rendered) await new Promise(resolve => window.setTimeout(resolve, 500));
+        }
+        if (!rendered) throw new Error('Snapshot guardado, pero no se pudo actualizar la pantalla');
         byId('updated-at').textContent = `Datos: ${formatDashboardDataTime(state.snapshot_at)} (actualizado)`;
         finished = true;
         break;
