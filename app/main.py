@@ -5,6 +5,7 @@ import os
 from datetime import datetime, timedelta, timezone
 import hmac
 import logging
+from time import perf_counter
 from typing import Any
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, Response
@@ -209,10 +210,15 @@ def recover_downtime_opportunity(
 
 
 def build_dashboard_payload() -> dict:
+    timings: dict[str, float] = {}
+    stage_start = perf_counter()
     client = HyperliquidClient(settings.info_url)
 
     app_settings = settings_service.get_all()
+    timings["settings_ms"] = round((perf_counter() - stage_start) * 1000, 1)
+    stage_start = perf_counter()
     price = client.get_mid(settings.coin)
+    timings["price_ms"] = round((perf_counter() - stage_start) * 1000, 1)
 
     lookback_days = int(app_settings.get(LOOKBACK_DAYS, app_settings.get(DAILY_SWING_CANDLES, 120)))
     backtest_count = int(app_settings[BACKTEST_CANDLES])
@@ -230,19 +236,26 @@ def build_dashboard_payload() -> dict:
     daily_required_closed = lookback_days + (settings.swing_sma_period - 1)
     daily_fetch_margin = 6
 
+    stage_start = perf_counter()
     daily_closed = closed_candles(
         client.get_candles(settings.coin, "1d", daily_required_closed + daily_fetch_margin)
     )
+    timings["daily_candles_ms"] = round((perf_counter() - stage_start) * 1000, 1)
+    stage_start = perf_counter()
     daily_warmup, daily_analysis = split_daily_candles_for_swing(
         closed_candles=daily_closed,
         analysis_sessions=lookback_days,
         sma_period=settings.swing_sma_period,
         strict=True,
     )
+    timings["daily_preparation_ms"] = round((perf_counter() - stage_start) * 1000, 1)
 
+    stage_start = perf_counter()
     hourly = closed_candles(client.get_candles(settings.coin, "1h", hourly_count))
+    timings["hourly_candles_ms"] = round((perf_counter() - stage_start) * 1000, 1)
 
     from app.market.freshness import evaluate_hourly_freshness
+    stage_start = perf_counter()
     market_freshness = evaluate_hourly_freshness(hourly)
     payload = build_dashboard_state(
         price=price,
@@ -266,6 +279,8 @@ def build_dashboard_payload() -> dict:
         setup_context_manager=setup_context_manager,
     )
     payload['market_freshness'] = market_freshness
+    timings['indicators_ms'] = round((perf_counter() - stage_start) * 1000, 1)
+    logging.getLogger(__name__).info('dashboard_stage_timings %s', timings)
     return payload
 
 
