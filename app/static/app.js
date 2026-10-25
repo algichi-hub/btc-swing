@@ -2154,6 +2154,11 @@ function renderAuthBar(user) {
 
 function applyRbacUI(user) {
   if (user.role === 'VIEWER') {
+    const manualRefreshBtn = byId('home-update-button');
+    if (manualRefreshBtn) {
+      manualRefreshBtn.disabled = true;
+      manualRefreshBtn.title = 'Actualización manual reservada a ADMIN';
+    }
     const saveSettingsBtn = byId('save-settings');
     if (saveSettingsBtn) {
       saveSettingsBtn.disabled = true;
