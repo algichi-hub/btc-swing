@@ -45,10 +45,11 @@
 
           <div class="hourly-volume-chart">
             <div id="hourly-volume-plot" class="hourly-volume-plot">
-              <div id="hourly-volume-bars" class="hourly-volume-bars" role="img" aria-label="Histograma de volumen horario USD en 24 velas cerradas"></div>
+              <div id="hourly-volume-bars" class="hourly-volume-bars" role="img" aria-label="Volumen horario en 24 velas cerradas, con color según dirección del precio de cada vela, no volumen neto"></div>
               <div id="hourly-volume-tooltip" class="hourly-volume-tooltip hidden" role="tooltip"></div>
             </div>
           </div>
+          <p class="hourly-volume-legend"><span class="up">● Verde: cierre &gt; apertura</span> · <span class="down">● Rojo: cierre &lt; apertura</span> · <span class="flat">● Gris: sin cambio</span>. Color según precio, <strong>no representa compras/ventas netas</strong>.</p>
         </section>
 
         <div class="kpis">
@@ -410,7 +411,7 @@
     </div>
     <p id="pnl-detail-empty" class="signal-reason hidden">No hay datos de PnL para este período.</p>
   </div>
-  <script src="/static/app.js?v=g6-history-idle-prefetch-1"></script>
+  <script src="/static/app.js?v=g6-volume-candle-direction-1"></script>
   <script src="/static/pwa-install.js" defer></script>
 </body>
 </html>
