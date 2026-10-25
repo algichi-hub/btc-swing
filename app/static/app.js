@@ -1907,10 +1907,10 @@ async function refreshDashboard(options = { scheduleNext: true }) {
     renderTradeDiagnostics(payload.trade_diagnostics || null);
 
     lastValidTimestampIso = payload.timestamp || lastValidTimestampIso;
-    byId('status').textContent = freshMarket ? 'ONLINE' : 'DATOS DE MERCADO OBSOLETOS';
+    byId('status').textContent = freshMarket ? 'ONLINE' : (marketFreshness?.status === 'STALE' ? 'DATOS DE MERCADO OBSOLETOS' : 'FRESCURA NO VERIFICADA');
     byId('updated-at').textContent = freshMarket
       ? `Actualizado ${formatTimeFromIso(lastValidTimestampIso)}`
-      : `Señales bloqueadas · última vela 1h: ${formatTimeFromIso(marketFreshness?.last_candle_close)}`;
+      : (marketFreshness?.status === 'STALE' ? `Señales bloqueadas · última vela 1h: ${formatTimeFromIso(marketFreshness?.last_candle_close)}` : 'Señales bloqueadas · sin verificación de la última vela 1h');
 
     try {
       await loadAutomationStatus();
