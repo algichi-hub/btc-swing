@@ -228,6 +228,20 @@ def run_requested_cycle(run_engine: Callable[[], object]) -> str | None:
     return status
 
 
+def recover_orphaned_requests() -> None:
+    """On startup, mark interrupted requests as failed only if no Engine holds the lock."""
+    with _connect() as lock_conn:
+        acquired = lock_conn.execute('SELECT pg_try_advisory_lock(%s) AS locked', (LOCK_KEY,)).fetchone()['locked']
+        if not acquired:
+            return
+        try:
+            with _connect() as conn:
+                conn.execute("""UPDATE manual_cycle_requests SET status='ERROR',completed_at=now()
+                                WHERE status='RUNNING'""")
+        finally:
+            lock_conn.execute('SELECT pg_advisory_unlock(%s) AS unlocked', (LOCK_KEY,))
+
+
 def main() -> None:
     if os.environ.get('BTC_PROCESS_ROLE') != 'worker':
         raise RuntimeError('BTC_PROCESS_ROLE=worker required')
@@ -238,6 +252,7 @@ def main() -> None:
     from app.release_guard import enforce_cloud_isolation
     enforce_cloud_isolation(role='worker')
     cycle = _build_engine()
+    recover_orphaned_requests()
     stop = False
     def on_shutdown(signum, frame):
         nonlocal stop
