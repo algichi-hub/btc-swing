@@ -1815,7 +1815,7 @@ async function refreshDashboard(options = { scheduleNext: true }) {
   refreshInFlight = true;
 
   try {
-    const response = await fetch('/api/dashboard', { cache: 'no-store' });
+    const response = await fetch(options.live ? '/api/dashboard?refresh=true' : '/api/dashboard', { cache: 'no-store' });
     if (!response.ok) {
       throw new Error(await response.text());
     }
@@ -2226,6 +2226,18 @@ async function bootstrap() {
     hidePnlTooltip();
   });
   setTelegramButtonBusy(false);
+
+  const updateButton = byId('home-update-button');
+  updateButton?.addEventListener('click', async () => {
+    updateButton.disabled = true;
+    updateButton.textContent = 'Actualizando…';
+    try {
+      await refreshDashboard({ scheduleNext: true, live: true });
+    } finally {
+      updateButton.disabled = false;
+      updateButton.textContent = 'Actualizar';
+    }
+  });
 
   attachPnlDetail();
   // Run the read-only dashboard immediately; do not wait for settings/auxiliary API calls.
