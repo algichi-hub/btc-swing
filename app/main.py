@@ -630,8 +630,8 @@ def reset_database() -> dict[str, Any]:
 
 @viewer_router.get("/pnl/daily-cumulative")
 def pnl_chart(days: int | None = Query(default=None, ge=1)) -> dict[str, Any]:
-    app_settings = settings_service.get_all()
-    chart_days = days if isinstance(days, int) else int(app_settings.get(PNL_CHART_DAYS, 30))
+    # Explicit chart windows bypass settings initialization and its database I/O.
+    chart_days = days if days is not None else int(settings_service.get_all().get(PNL_CHART_DAYS, 30))
     points = trade_repository.get_daily_cumulative_pnl(days=chart_days)
     return {
         "points": points,
