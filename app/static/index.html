@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>BTC Swing Trade</title>
-  <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="stylesheet" href="/static/styles.css?v=g6-pnl-landscape-1" />
   <link rel="manifest" href="/static/manifest.webmanifest" />
   <meta name="theme-color" content="#101827" />
 </head>
@@ -169,11 +169,12 @@
         </div>
 
         <div class="pnl-chart-wrap">
-          <div id="pnl-chart-plot" class="pnl-chart-plot">
+          <div id="pnl-chart-plot" class="pnl-chart-plot pnl-chart-compact" tabindex="0" role="button" aria-label="Ampliar gráfica de PnL">
             <svg id="pnl-chart-svg" class="pnl-chart-svg" aria-label="Gráfica de PnL acumulado diario"></svg>
             <div id="pnl-chart-tooltip" class="pnl-chart-tooltip hidden" role="tooltip"></div>
           </div>
           <p id="pnl-chart-empty" class="signal-reason hidden">No hay datos de PnL todavía.</p>
+          <p class="pnl-chart-hint">Toca la gráfica para ampliar · 7 días</p>
         </div>
       </article>
 
@@ -251,15 +252,6 @@
             <p class="field-help">Anchura porcentual mínima requerida entre soporte y resistencia para considerar el rango apto para una operación swing.</p>
           </div>
 
-          <div class="form-field">
-            <label for="pnl-chart-days">Ventana gráfica PnL acumulado</label>
-            <select id="pnl-chart-days" name="pnl_chart_days" class="settings-select">
-              <option value="7">7 días</option>
-              <option value="30">30 días</option>
-              <option value="90">90 días</option>
-            </select>
-            <p class="field-help">Ventana de tiempo para la visualización de la gráfica lineal de PnL acumulado.</p>
-          </div>
 
           <div class="form-field">
             <label for="volume-baseline-period">Ventana de referencia de volumen (h)</label>
@@ -398,7 +390,24 @@
     </button>
   </nav>
 
-  <script src="/static/app.js"></script>
+  <div id="pnl-detail-modal" class="pnl-detail-modal hidden" role="dialog" aria-modal="true" aria-label="PnL acumulado ampliado">
+    <div class="pnl-detail-header">
+      <strong>PnL acumulado</strong>
+      <div class="pnl-detail-periods" role="group" aria-label="Período del gráfico">
+        <button type="button" data-pnl-days="7" class="active" aria-pressed="true">7 días</button>
+        <button type="button" data-pnl-days="30" aria-pressed="false">30 días</button>
+        <button type="button" data-pnl-days="90" aria-pressed="false">90 días</button>
+      </div>
+      <button id="pnl-detail-close" type="button" aria-label="Cerrar gráfico ampliado">✕</button>
+    </div>
+    <p id="pnl-detail-rotate" class="pnl-detail-rotate hidden">Gira el dispositivo a horizontal para ver el gráfico ampliado.</p>
+    <div id="pnl-detail-plot" class="pnl-detail-plot">
+      <svg id="pnl-detail-svg" class="pnl-detail-svg" aria-label="Gráfico detallado de PnL acumulado"></svg>
+      <div id="pnl-detail-tooltip" class="pnl-chart-tooltip hidden" role="tooltip"></div>
+    </div>
+    <p id="pnl-detail-empty" class="signal-reason hidden">No hay datos de PnL para este período.</p>
+  </div>
+  <script src="/static/app.js?v=g6-pnl-landscape-1"></script>
   <script src="/static/pwa-install.js" defer></script>
 </body>
 </html>
