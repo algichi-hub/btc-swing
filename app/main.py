@@ -5,6 +5,7 @@ import os
 from datetime import datetime, timedelta, timezone
 import hmac
 import logging
+import uuid
 from time import perf_counter
 from typing import Any
 
@@ -631,6 +632,38 @@ def hourly_candle_directions() -> dict:
             for candle in candles[-24:]
         ]
     }
+
+
+@admin_router.post("/engine/manual-refresh")
+def request_manual_engine_refresh() -> dict:
+    """Queue an Engine cycle. API never calculates or mutates trade opportunities."""
+    from app.storage.postgres import connect_pg
+    with connect_pg() as conn:
+        row = conn.execute("""INSERT INTO manual_cycle_requests(id,status)
+                              VALUES(%s,'PENDING') ON CONFLICT DO NOTHING
+                              RETURNING id,status""", (str(uuid.uuid4()),)).fetchone()
+        if row is None:
+            row = conn.execute("""SELECT id,status FROM manual_cycle_requests
+                                  WHERE status IN ('PENDING','RUNNING')
+                                  ORDER BY requested_at LIMIT 1""").fetchone()
+    if row is None:
+        raise HTTPException(status_code=503, detail="Unable to queue Engine refresh")
+    return {"id": row["id"], "status": row["status"]}
+
+
+@viewer_router.get("/engine/manual-refresh/{request_id}")
+def get_manual_engine_refresh(request_id: str) -> dict:
+    try:
+        parsed = str(uuid.UUID(request_id))
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid refresh request")
+    from app.storage.postgres import connect_pg
+    with connect_pg() as conn:
+        row = conn.execute("""SELECT id,status,snapshot_at FROM manual_cycle_requests
+                              WHERE id=%s""", (parsed,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Refresh request not found")
+    return {"id": row["id"], "status": row["status"], "snapshot_at": row["snapshot_at"]}
 
 
 @viewer_router.get("/dashboard")
