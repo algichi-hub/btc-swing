@@ -618,6 +618,21 @@ def update_app_settings(payload: SettingsUpdatePayload) -> dict[str, Any]:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
+@viewer_router.get("/display/hourly-candle-directions")
+def hourly_candle_directions() -> dict:
+    """Presentation-only OHLC colors; never affects Engine or dashboard payload."""
+    candles = closed_candles(HyperliquidClient(settings.info_url).get_candles(settings.coin, "1h", 30))
+    return {
+        "bars": [
+            {
+                "timestamp": datetime.fromtimestamp(candle.open_time_ms / 1000, timezone.utc).isoformat(),
+                "candle_direction": "UP" if candle.close > candle.open else ("DOWN" if candle.close < candle.open else "FLAT"),
+            }
+            for candle in candles[-24:]
+        ]
+    }
+
+
 @viewer_router.get("/dashboard")
 def dashboard(refresh: bool = False) -> dict:
     # The normal read path never contacts Hyperliquid or reruns the strategy.
