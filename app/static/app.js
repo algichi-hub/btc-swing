@@ -2211,8 +2211,9 @@ async function bootstrap() {
     return;
   }
 
-  await fetchCsrfToken();
-
+  // P1: dashboard is the critical path; CSRF token is fetched before mutations,
+  // but should not block the initial read-only market display.
+  void fetchCsrfToken();
 
   attachNavigation();
   attachSettingsForm();
@@ -2227,36 +2228,31 @@ async function bootstrap() {
   });
   setTelegramButtonBusy(false);
 
-  try {
-    await loadSettings();
-    setSettingsFeedback('');
-  } catch (error) {
-    setSettingsFeedback('No fue posible cargar ajustes.', 'error');
-    console.error(error);
-  }
-
-  try {
-    await loadAutomationStatus();
-  } catch (error) {
-    setAutomationStatusBadge(false);
-    setAutomationField('automation-interval', '—');
-    setAutomationField('automation-last-cycle', '—');
-    setAutomationField('automation-next-cycle', '—');
-    setAutomationStaleWarning(false);
-    console.error(error);
-  }
-
-  try {
-    await loadTelegramStatus();
-    setTelegramFeedback('');
-  } catch (error) {
-    setTelegramFeedback('No fue posible cargar estado de Telegram.', 'error');
-    console.error(error);
-  }
-
   attachPnlDetail();
-  await refreshDashboard();
+  // Run the read-only dashboard immediately; do not wait for settings/auxiliary API calls.
+  void refreshDashboard();
   void loadPnlChart(7);
+
+  // Retain the existing settings and automation behavior, but load them independently.
+  void (async () => {
+    try {
+      await loadSettings();
+      setSettingsFeedback('');
+    } catch (error) {
+      setSettingsFeedback('No fue posible cargar ajustes.', 'error');
+      console.error(error);
+    }
+  })();
+  // Dashboard refresh already requests automation status; avoid duplicate initial request.
+  void (async () => {
+    try {
+      await loadTelegramStatus();
+      setTelegramFeedback('');
+    } catch (error) {
+      setTelegramFeedback('No fue posible cargar estado de Telegram.', 'error');
+      console.error(error);
+    }
+  })();
 
   const hashView = window.location.hash ? window.location.hash.replace('#', '') : '';
   if (['home', 'history', 'settings'].includes(hashView)) {
