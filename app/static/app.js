@@ -1021,19 +1021,27 @@ let pnlChartInFlight = false;
 let pnlChartLastPoints = null;
 let pnlChartLastDays = null;
 let pnlChartResizeObserver = null;
+let pnlDetailResizeObserver = null;
+let pnlDetailPoints = [];
+let pnlDetailDays = 7;
+let pnlDetailRequest = 0;
+let pnlDetailOpen = false;
+let pnlDetailPreviousFocus = null;
+let pnlCompactLongPress = null;
+let pnlCompactSuppressClick = false;
 
 
 
-function hidePnlTooltip() {
-  const tooltip = byId('pnl-chart-tooltip');
+function hidePnlTooltip(detail = false) {
+  const tooltip = byId(detail ? 'pnl-detail-tooltip' : 'pnl-chart-tooltip');
   if (tooltip) {
     tooltip.classList.add('hidden');
   }
 }
 
-function showPnlTooltip(target, point) {
-  const tooltip = byId('pnl-chart-tooltip');
-  const plot = byId('pnl-chart-plot');
+function showPnlTooltip(target, point, detail = false) {
+  const tooltip = byId(detail ? 'pnl-detail-tooltip' : 'pnl-chart-tooltip');
+  const plot = byId(detail ? 'pnl-detail-plot' : 'pnl-chart-plot');
   if (!tooltip || !plot || !point) {
     return;
   }
@@ -1074,22 +1082,125 @@ function showPnlTooltip(target, point) {
   tooltip.style.left = `${left}px`;
 }
 
-function renderPnlChart(points, days) {
-  const svg = byId('pnl-chart-svg');
-  const empty = byId('pnl-chart-empty');
-  const summary = byId('pnl-chart-summary');
+
+async function loadPnlDetail(days) {
+  if (![7, 30, 90].includes(days)) return;
+  pnlDetailDays = days;
+  const token = ++pnlDetailRequest;
+  document.querySelectorAll('[data-pnl-days]').forEach(button => {
+    const active = Number(button.dataset.pnlDays) === days;
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-pressed', String(active));
+  });
+  try {
+    const response = await fetch(`/api/pnl/daily-cumulative?days=${days}`, { cache: 'no-store' });
+    if (!response.ok) throw new Error('Error cargando PnL detallado');
+    const payload = await response.json();
+    if (token !== pnlDetailRequest || !pnlDetailOpen) return;
+    requestAnimationFrame(() => renderPnlChart(payload.points, days, true));
+  } catch (err) {
+    if (token !== pnlDetailRequest || !pnlDetailOpen) return;
+    byId('pnl-detail-svg').classList.add('hidden');
+    byId('pnl-detail-empty').classList.remove('hidden');
+    console.error(err);
+  }
+}
+function updatePnlDetailOrientation() {
+  if (!pnlDetailOpen) return;
+  const portrait = window.innerHeight > window.innerWidth;
+  byId('pnl-detail-rotate').classList.toggle('hidden', !portrait);
+  byId('pnl-detail-plot').classList.toggle('hidden', portrait);
+  if (!portrait && pnlDetailPoints.length) renderPnlChart(pnlDetailPoints, pnlDetailDays, true);
+}
+async function openPnlDetail() {
+  if (pnlDetailOpen) return;
+  pnlDetailOpen = true;
+  pnlDetailPreviousFocus = document.activeElement;
+  const modal = byId('pnl-detail-modal');
+  modal.classList.remove('hidden');
+  document.body.classList.add('pnl-detail-active');
+  // Fullscreen is required by some browsers before orientation.lock is permitted.
+  try { if (modal.requestFullscreen) await modal.requestFullscreen(); } catch (_) {}
+  try {
+    if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape');
+  } catch (_) { /* Chrome Android may refuse: provide manual rotation fallback. */ }
+  updatePnlDetailOrientation();
+  byId('pnl-detail-close').focus();
+  void loadPnlDetail(7);
+}
+async function closePnlDetail() {
+  if (!pnlDetailOpen) return;
+  pnlDetailOpen = false;
+  ++pnlDetailRequest;
+  byId('pnl-detail-modal').classList.add('hidden');
+  document.body.classList.remove('pnl-detail-active');
+  hidePnlTooltip(true);
+  try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (_) {}
+  try { if (document.fullscreenElement) await document.exitFullscreen(); } catch (_) {}
+  if (pnlDetailPreviousFocus && pnlDetailPreviousFocus.focus) pnlDetailPreviousFocus.focus();
+}
+function attachPnlDetail() {
+  const plot = byId('pnl-chart-plot');
+  if (!plot) return;
+  plot.addEventListener('click', () => {
+    if (pnlCompactSuppressClick) { pnlCompactSuppressClick = false; return; }
+    void openPnlDetail();
+  });
+  plot.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); void openPnlDetail(); }
+  });
+  plot.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'mouse') return;
+    clearTimeout(pnlCompactLongPress);
+    pnlCompactLongPress = setTimeout(() => {
+      pnlCompactSuppressClick = true;
+      const points = pnlChartLastPoints || [];
+      if (points.length) showPnlTooltip(plot.clientWidth / 2, points[Math.floor(points.length / 2)]);
+    }, 550);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(type =>
+    plot.addEventListener(type, () => clearTimeout(pnlCompactLongPress)));
+  byId('pnl-detail-close').addEventListener('click', () => void closePnlDetail());
+  document.querySelectorAll('[data-pnl-days]').forEach(button =>
+    button.addEventListener('click', () => void loadPnlDetail(Number(button.dataset.pnlDays))));
+  document.addEventListener('keydown', event => {
+    if (pnlDetailOpen && event.key === 'Escape') { event.preventDefault(); void closePnlDetail(); }
+    if (pnlDetailOpen && event.key === 'Tab') {
+      const controls = [...byId('pnl-detail-modal').querySelectorAll('button')];
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    }
+  });
+  window.addEventListener('resize', updatePnlDetailOrientation);
+  document.addEventListener('fullscreenchange', updatePnlDetailOrientation);
+  if (typeof ResizeObserver !== 'undefined') {
+    pnlDetailResizeObserver = new ResizeObserver(() => {
+      if (pnlDetailOpen && pnlDetailPoints.length && window.innerWidth >= window.innerHeight) {
+        const svg = byId('pnl-detail-svg');
+        if (Math.abs(svg.getBoundingClientRect().width - Number(svg.getAttribute('viewBox')?.split(' ')[2])) > 1) renderPnlChart(pnlDetailPoints, pnlDetailDays, true);
+      }
+    });
+    pnlDetailResizeObserver.observe(byId('pnl-detail-svg'));
+  }
+}
+
+function renderPnlChart(points, days, detail = false) {
+  const svg = byId(detail ? 'pnl-detail-svg' : 'pnl-chart-svg');
+  const empty = byId(detail ? 'pnl-detail-empty' : 'pnl-chart-empty');
+  const summary = detail ? null : byId('pnl-chart-summary');
 
   if (!svg || !empty) {
     return;
   }
 
   svg.replaceChildren();
-  hidePnlTooltip();
+  hidePnlTooltip(detail);
 
   const dataPoints = Array.isArray(points) ? points : [];
-  pnlChartLastPoints = dataPoints;
-  pnlChartLastDays = days;
-  if (!pnlChartResizeObserver && typeof ResizeObserver !== 'undefined') {
+  if (detail) { pnlDetailPoints = dataPoints; pnlDetailDays = days; }
+  else { pnlChartLastPoints = dataPoints; pnlChartLastDays = days; }
+  if (!detail && !pnlChartResizeObserver && typeof ResizeObserver !== 'undefined') {
     pnlChartResizeObserver = new ResizeObserver(() => {
       if (pnlChartLastPoints && svg.clientWidth > 0 &&
           Math.abs(svg.clientWidth - Number(svg.getAttribute('viewBox')?.split(' ')[2])) > 1) {
@@ -1131,15 +1242,15 @@ function renderPnlChart(points, days) {
 
   // Keep the SVG coordinate system aligned with its rendered width so axis
   // text is never stretched horizontally on narrow screens.
-  const svgWidth = Math.max(1, svg.clientWidth || 800);
-  const svgHeight = 260;
+  const svgWidth = Math.max(1, svg.getBoundingClientRect().width || svg.clientWidth || 800);
+  const svgHeight = detail ? 260 : 150;
   svg.setAttribute('viewBox', `0 0 ${svgWidth} ${svgHeight}`);
   svg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
 
-  const padLeft = 70;
-  const padRight = 30;
-  const padTop = 25;
-  const padBottom = 40;
+  const padLeft = detail ? 75 : 8;
+  const padRight = detail ? 30 : 8;
+  const padTop = detail ? 25 : 10;
+  const padBottom = detail ? 40 : 10;
   const plotWidth = svgWidth - padLeft - padRight;
   const plotHeight = svgHeight - padTop - padBottom;
 
@@ -1187,6 +1298,7 @@ function renderPnlChart(points, days) {
     gridLine.setAttribute('stroke-width', '1');
     svg.appendChild(gridLine);
 
+    if (!detail) continue;
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     text.setAttribute('x', String(padLeft - 10));
     text.setAttribute('y', String(tickY + 4));
@@ -1247,7 +1359,7 @@ function renderPnlChart(points, days) {
     labelIndices.push(dataPoints.length - 1);
   }
 
-  labelIndices.forEach((idx) => {
+  if (detail) labelIndices.forEach((idx) => {
     const p = dataPoints[idx];
     const x = getX(idx);
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -1266,7 +1378,7 @@ function renderPnlChart(points, days) {
     if (dataPoints.length === 0) {
       return;
     }
-    const plot = byId('pnl-chart-plot');
+    const plot = byId(detail ? 'pnl-detail-plot' : 'pnl-chart-plot');
     if (!plot) {
       return;
     }
@@ -1278,7 +1390,7 @@ function renderPnlChart(points, days) {
 
     const svgX = ((e.clientX - svgRect.left) / svgRect.width) * svgWidth;
     if (svgX < padLeft || svgX > padLeft + plotWidth) {
-      hidePnlTooltip();
+      hidePnlTooltip(detail);
       return;
     }
 
@@ -1286,22 +1398,22 @@ function renderPnlChart(points, days) {
     const idx = clamp(Math.round(ratio * (dataPoints.length - 1)), 0, dataPoints.length - 1);
     const point = dataPoints[idx];
     const targetX = (getX(idx) / svgWidth) * plotRect.width;
-    showPnlTooltip(targetX, point);
+    showPnlTooltip(targetX, point, detail);
   };
 
   svg.onmouseleave = () => {
-    hidePnlTooltip();
+    hidePnlTooltip(detail);
   };
 }
 
-async function loadPnlChart(days = null) {
+async function loadPnlChart(days = 7) {
   if (pnlChartInFlight) {
     return;
   }
 
   pnlChartInFlight = true;
   try {
-    const url = days ? `/api/pnl/daily-cumulative?days=${encodeURIComponent(days)}` : '/api/pnl/daily-cumulative';
+    const url = `/api/pnl/daily-cumulative?days=${encodeURIComponent(days)}`;
     const response = await fetch(url, { cache: 'no-store' });
     if (!response.ok) {
       throw new Error('No fue posible obtener la serie de PnL.');
@@ -1309,7 +1421,7 @@ async function loadPnlChart(days = null) {
 
     const payload = await response.json();
     const points = Array.isArray(payload?.points) ? payload.points : [];
-    const activeDays = Number(payload?.days) || days || 30;
+    const activeDays = Number(payload?.days) || days || 7;
 
     renderPnlChart(points, activeDays);
   } catch (error) {
@@ -1772,7 +1884,6 @@ async function saveSettings(event) {
     const sma20FilterPct = parseAndValidateSetting('sma20_filter_pct', byId('sma20-filter-pct').value);
     const operationalRangePct = parseAndValidateSetting('operational_range_pct', byId('operational-range-pct').value);
     const minOperationalRangePct = parseAndValidateSetting('min_operational_range_pct', byId('min-operational-range-pct').value);
-    const pnlChartDays = parseAndValidateSetting('pnl_chart_days', byId('pnl-chart-days').value);
     const volumeBaselinePeriod = byId('volume-baseline-period')
       ? parseAndValidateSetting('volume_baseline_period', byId('volume-baseline-period').value)
       : undefined;
@@ -1790,7 +1901,6 @@ async function saveSettings(event) {
       sma20_filter_pct: sma20FilterPct,
       operational_range_pct: operationalRangePct,
       min_operational_range_pct: minOperationalRangePct,
-      pnl_chart_days: pnlChartDays,
     };
     if (dailySwing !== undefined) {
       bodyPayload.daily_swing_candles = dailySwing;
@@ -1847,7 +1957,7 @@ async function saveSettings(event) {
     setSettingsFeedback('Ajustes guardados correctamente', 'success');
 
     await refreshDashboard({ scheduleNext: false });
-    await loadPnlChart(saved.pnl_chart_days);
+    await loadPnlChart(7);
     scheduleNextRefresh();
   } catch (error) {
     setSettingsFeedback(error instanceof Error ? error.message : 'Error guardando ajustes', 'error');
@@ -2144,8 +2254,9 @@ async function bootstrap() {
     console.error(error);
   }
 
+  attachPnlDetail();
   await refreshDashboard();
-  void loadPnlChart();
+  void loadPnlChart(7);
 
   const hashView = window.location.hash ? window.location.hash.replace('#', '') : '';
   if (['home', 'history', 'settings'].includes(hashView)) {
