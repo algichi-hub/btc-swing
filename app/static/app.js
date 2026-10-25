@@ -2206,20 +2206,21 @@ function attachRecoveryCodes() {
 }
 
 async function bootstrap() {
+  // Start the CSRF read in parallel, but never begin private UI work before auth.
+  const csrfPromise = fetchCsrfToken();
   const user = await checkAuth();
   if (!user) {
     return;
   }
 
-  // Keep CSRF token ready before account/settings mutations.
-  await fetchCsrfToken();
-
   attachNavigation();
-  attachSettingsForm();
-  attachPasswordChange();
-  attachRecoveryCodes();
-  attachTelegramTestButton();
-  attachDatabaseReset();
+  void csrfPromise.then(() => {
+    attachSettingsForm();
+    attachPasswordChange();
+    attachRecoveryCodes();
+    attachTelegramTestButton();
+    attachDatabaseReset();
+  });
   attachTradeDiagnosticsToggle();
   document.addEventListener('click', () => {
     hideHourlyVolumeTooltip();
