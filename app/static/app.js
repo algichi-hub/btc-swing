@@ -980,6 +980,54 @@ function renderHistory(items) {
   });
 }
 
+// P3: in-memory, per-session prefetch; no persistent private-data cache.
+const HISTORY_PREFETCH_TTL_MS = 10 * 60 * 1000;
+const historyReadCache = new Map();
+let historyPrefetchScheduled = false;
+function cachedHistoryRead(url) {
+  const now = Date.now();
+  const previous = historyReadCache.get(url);
+  if (previous && (previous.promise || now - previous.at < HISTORY_PREFETCH_TTL_MS)) {
+    return previous.promise || Promise.resolve(previous.value);
+  }
+  const entry = { at: now, value: null, promise: null };
+  entry.promise = fetch(url, { cache: 'no-store' }).then((response) => {
+    if (!response.ok) throw new Error('Error al consultar datos históricos');
+    return response.json();
+  }).then((payload) => {
+    entry.value = payload;
+    entry.at = Date.now();
+    entry.promise = null;
+    return payload;
+  }).catch((error) => {
+    if (historyReadCache.get(url) === entry) historyReadCache.delete(url);
+    throw error;
+  });
+  historyReadCache.set(url, entry);
+  return entry.promise;
+}
+function scheduleHistoryPrefetch() {
+  if (historyPrefetchScheduled) return;
+  historyPrefetchScheduled = true;
+  // After Home has completed its network requests; prefetch is never awaited by Home.
+  const run = async () => {
+    historyPrefetchScheduled = false;
+    if (document.hidden) return;
+    try {
+      await cachedHistoryRead('/api/history?limit=100');
+      await cachedHistoryRead('/api/pnl/daily-cumulative?days=7');
+    } catch (error) {
+      // A failed background request must never replace or delay dashboard UI.
+      console.debug('Precarga del histórico no disponible', error);
+    }
+  };
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(() => { void run(); }, { timeout: 2500 });
+  } else {
+    window.setTimeout(() => { void run(); }, 1500);
+  }
+}
+
 async function loadHistory(limit = 100) {
   if (historyRefreshInFlight) {
     return;
@@ -992,12 +1040,7 @@ async function loadHistory(limit = 100) {
   try {
     setHistoryFeedback('');
 
-    const response = await fetch(`/api/history?limit=${encodeURIComponent(limit)}`, { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error('No fue posible obtener el histórico.');
-    }
-
-    const payload = await response.json();
+    const payload = await cachedHistoryRead(`/api/history?limit=${encodeURIComponent(limit)}`);
     const items = Array.isArray(payload?.items) ? payload.items : [];
 
     setHistoryCount(items.length);
@@ -1414,12 +1457,7 @@ async function loadPnlChart(days = 7) {
   pnlChartInFlight = true;
   try {
     const url = `/api/pnl/daily-cumulative?days=${encodeURIComponent(days)}`;
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error('No fue posible obtener la serie de PnL.');
-    }
-
-    const payload = await response.json();
+    const payload = await cachedHistoryRead(url);
     const points = Array.isArray(payload?.points) ? payload.points : [];
     const activeDays = Number(payload?.days) || days || 7;
 
@@ -1848,6 +1886,9 @@ async function refreshDashboard(options = { scheduleNext: true }) {
     } catch (error) {
       console.error(error);
     }
+
+    // Start historical requests only after the dashboard has rendered and its status is loaded.
+    scheduleHistoryPrefetch();
 
     const historyView = byId('view-history');
     if (historyView && !historyView.classList.contains('hidden')) {
