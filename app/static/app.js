@@ -202,6 +202,17 @@ function formatDateTimeFromIso(isoTimestamp) {
   }).format(date);
 }
 
+function formatDashboardDataTime(isoTimestamp) {
+  const date = isoTimestamp ? new Date(isoTimestamp) : null;
+  if (!date || Number.isNaN(date.getTime())) return '—';
+  const parts = new Intl.DateTimeFormat('es-ES', {
+    timeZone: 'Europe/Madrid', day: '2-digit', month: '2-digit',
+    year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).formatToParts(date);
+  const part = (type) => parts.find((item) => item.type === type)?.value || '—';
+  return part('day') + '/' + part('month') + '/' + part('year') + ' y ' + part('hour') + ':' + part('minute');
+}
+
 function formatHistoryDateTimeFromIso(isoTimestamp) {
   if (!isoTimestamp) {
     return '—';
@@ -1905,7 +1916,7 @@ async function refreshDashboard(options = { scheduleNext: true }) {
 
     lastValidTimestampIso = payload.timestamp || lastValidTimestampIso;
     byId('status').textContent = '';
-    byId('updated-at').textContent = `Datos: ${formatDateTimeFromIso(payload.snapshot_created_at || payload.timestamp)} (Neon)`;
+    byId('updated-at').textContent = `Datos: ${formatDashboardDataTime(payload.snapshot_created_at || payload.timestamp)} (Neon)`;
 
     try {
       await loadAutomationStatus();
@@ -1922,9 +1933,9 @@ async function refreshDashboard(options = { scheduleNext: true }) {
       await loadPnlChart();
     }
   } catch (error) {
-    byId('status').textContent = 'Datos temporalmente no actualizados';
+    byId('status').textContent = '';
     const fallback = lastValidTimestampIso
-      ? `Última actualización válida: ${formatTimeFromIso(lastValidTimestampIso)}`
+      ? `Datos: ${formatDashboardDataTime(lastValidTimestampIso)} (Neon)`
       : 'Datos temporalmente no actualizados';
     byId('updated-at').textContent = fallback;
     console.error(error);
@@ -2318,7 +2329,7 @@ async function bootstrap() {
         if (state.status === 'ERROR') throw new Error('El ciclo del Engine terminó con error');
         if (state.status !== 'OK') continue;
         await refreshDashboard({ scheduleNext: true });
-        byId('updated-at').textContent = `Datos: ${formatDateTimeFromIso(state.snapshot_at)} (actualizado)`;
+        byId('updated-at').textContent = `Datos: ${formatDashboardDataTime(state.snapshot_at)} (actualizado)`;
         finished = true;
         break;
       }
