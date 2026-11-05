@@ -1,5 +1,5 @@
 """History/PnL read-only functional and regression tests; no engine or live DB."""
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 
@@ -101,9 +101,9 @@ def test_empty_no_trades_keeps_empty_chart(fixture_db):
 
 def test_default_series_reaches_current_utc_day(fixture_db):
     db, repository = fixture_db
-    yesterday = date.today() - timedelta(days=1)
+    yesterday = datetime.now(timezone.utc).date() - timedelta(days=1)
     add_trade(db, 1, yesterday.isoformat() + "T08:00:00+00:00")
     add_event(db, 1, yesterday.isoformat() + "T09:00:00+00:00", "TP1", 1.25)
     points = repository.get_daily_cumulative_pnl(days=7)
-    assert points[-1]["date"] == date.today().isoformat()
+    assert points[-1]["date"] == datetime.now(timezone.utc).date().isoformat()
     assert points[-1]["cumulative_pnl"] == 1.25
