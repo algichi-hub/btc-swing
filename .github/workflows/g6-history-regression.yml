@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -30,5 +32,5 @@ jobs:
         run: python -m pytest -q tests/test_f1_exits.py tests/test_f1_golden.py tests/test_f1_contracts.py
       - name: No modifications to trade engine paths
         run: |
-          git diff --name-only HEAD~8 HEAD | tee /tmp/changed.txt
+          git diff --name-only origin/fix/g6-volume-transparent-pending...HEAD | tee /tmp/changed.txt
           if grep -E '^(app/automation/|app/strategy/|app/market/)' /tmp/changed.txt; then exit 1; fi
