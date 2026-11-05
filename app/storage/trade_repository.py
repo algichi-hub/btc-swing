@@ -563,7 +563,7 @@ class TradeRepository:
 
         start_date = min(daily_sums)
         if to_date is None:
-            end_date = max(date.today(), max(daily_sums))
+            end_date = max(datetime.now(timezone.utc).date(), max(daily_sums))
         elif isinstance(to_date, str):
             end_date = date.fromisoformat(to_date)
         elif isinstance(to_date, datetime):
