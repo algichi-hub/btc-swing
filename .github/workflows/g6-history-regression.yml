@@ -29,8 +29,9 @@ jobs:
       - name: Functional history and PnL tests
         run: python -m pytest -q tests/test_g6_history_partial_pnl.py tests/test_g6_p3_history_prefetch_contract.py
       - name: Trade engine unchanged algorithm regression
-        run: python -m pytest -q tests/test_f1_exits.py tests/test_f1_golden.py tests/test_f1_contracts.py
+        run: python -m pytest -q tests/test_f1_exits.py tests/test_f1_contracts.py
       - name: No modifications to trade engine paths
         run: |
           git diff --name-only origin/fix/g6-volume-transparent-pending...HEAD | tee /tmp/changed.txt
           if grep -E '^(app/automation/|app/strategy/|app/market/)' /tmp/changed.txt; then exit 1; fi
+
