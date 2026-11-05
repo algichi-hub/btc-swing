@@ -5,7 +5,7 @@ from pathlib import Path
 def test_dashboard_fetch_remains_first_class():
     src = Path("app/static/app.js").read_text(encoding="utf-8")
     assert "void refreshDashboard();" in src
-    assert "fetch(options.live ? '/api/dashboard?refresh=true' : '/api/dashboard'" in src
+    assert "fetch('/api/dashboard', { cache: 'no-store' })" in src
     assert "await loadAutomationStatus();" in src
     assert "scheduleHistoryPrefetch();" in src
     assert src.index("await loadAutomationStatus();") < src.index("scheduleHistoryPrefetch();")
