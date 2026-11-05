@@ -724,6 +724,9 @@ function setActiveView(viewName) {
   });
 
   if (viewName === 'history') {
+    // Re-entering History must not reuse a previous prefetch snapshot.
+    historyReadCache.delete('/api/history?limit=100');
+    historyReadCache.delete('/api/pnl/daily-cumulative?days=7');
     void loadHistory();
     void loadPnlChart();
   }
@@ -926,7 +929,7 @@ function renderHistory(items) {
 
   const historyItems = Array.isArray(items) ? items : [];
   if (historyItems.length === 0) {
-    empty.textContent = 'No hay operaciones cerradas todavía.';
+    empty.textContent = 'No hay operaciones todavía.';
     empty.classList.remove('hidden');
     return;
   }
@@ -1024,7 +1027,7 @@ function renderHistory(items) {
 }
 
 // P3: in-memory, per-session prefetch; no persistent private-data cache.
-const HISTORY_PREFETCH_TTL_MS = 10 * 60 * 1000;
+const HISTORY_PREFETCH_TTL_MS = 60 * 1000;
 const historyReadCache = new Map();
 let historyPrefetchScheduled = false;
 function cachedHistoryRead(url) {

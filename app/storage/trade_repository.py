@@ -497,7 +497,6 @@ class TradeRepository:
                     realized_r,
                     closed_at
                 FROM trade_signals
-                WHERE status = 'CLOSED'
                 ORDER BY created_at DESC, id DESC
                 LIMIT ?
                 """,
@@ -528,19 +527,24 @@ class TradeRepository:
         to_date: Any = None,
     ) -> list[dict[str, Any]]:
         """
-        Calculate daily realized PnL and cumulative PnL from CLOSED trades.
-        Grouped by UTC calendar day based on closed_at.
-        Includes calendar days without trades with daily_pnl=0.0 and flat cumulative_pnl.
-        Cumulative PnL is computed from the entire history; if 'days' is specified,
-        only the last 'days' are returned without resetting cumulative PnL to 0.
+        Realized PnL ledger, including partial exits from still-OPEN trades.
+        Each exit event contributes exactly once, on its UTC event date.
+        Legacy CLOSED trades without events fall back to their summary PnL.
+        Daily series extends through today even with no new realized exits.
         """
         with connect(self.database_path) as conn:
             rows = conn.execute(
                 """
-                SELECT realized_pnl_usd, closed_at
-                FROM trade_signals
-                WHERE status = 'CLOSED' AND closed_at IS NOT NULL
-                ORDER BY closed_at ASC, id ASC
+                SELECT signal_id, pnl_usd AS realized_pnl_usd, event_at AS realized_at
+                FROM trade_events
+                UNION ALL
+                SELECT s.id AS signal_id, s.realized_pnl_usd, s.closed_at AS realized_at
+                FROM trade_signals s
+                WHERE s.status = 'CLOSED' AND s.closed_at IS NOT NULL
+                  AND NOT EXISTS (
+                    SELECT 1 FROM trade_events e WHERE e.signal_id = s.id
+                  )
+                ORDER BY realized_at ASC, signal_id ASC
                 """
             ).fetchall()
 
@@ -548,39 +552,30 @@ class TradeRepository:
             return []
 
         daily_sums: dict[date, float] = {}
-        daily_counts: dict[date, int] = {}
-        all_dates: list[date] = []
-
+        daily_signal_ids: dict[date, set[int]] = {}
         for row in rows:
-            closed_at_str = str(row["closed_at"])
-            dt = datetime.fromisoformat(closed_at_str)
+            dt = datetime.fromisoformat(str(row["realized_at"]))
             if dt.tzinfo is None:
                 dt = dt.replace(tzinfo=timezone.utc)
-            d = dt.astimezone(timezone.utc).date()
-            pnl = float(row["realized_pnl_usd"] or 0.0)
+            day = dt.astimezone(timezone.utc).date()
+            daily_sums[day] = daily_sums.get(day, 0.0) + float(row["realized_pnl_usd"] or 0.0)
+            daily_signal_ids.setdefault(day, set()).add(int(row["signal_id"]))
 
-            daily_sums[d] = daily_sums.get(d, 0.0) + pnl
-            daily_counts[d] = daily_counts.get(d, 0) + 1
-            all_dates.append(d)
-
-        start_date = min(all_dates)
-        if to_date is not None:
-            if isinstance(to_date, str):
-                end_date = date.fromisoformat(to_date)
-            elif isinstance(to_date, datetime):
-                end_date = to_date.astimezone(timezone.utc).date()
-            else:
-                end_date = to_date
+        start_date = min(daily_sums)
+        if to_date is None:
+            end_date = max(datetime.now(timezone.utc).date(), max(daily_sums))
+        elif isinstance(to_date, str):
+            end_date = date.fromisoformat(to_date)
+        elif isinstance(to_date, datetime):
+            end_date = to_date.astimezone(timezone.utc).date()
         else:
-            end_date = max(all_dates)
-
+            end_date = to_date
         if end_date < start_date:
             end_date = start_date
 
         points: list[dict[str, Any]] = []
         current_date = start_date
         running_cumulative = 0.0
-
         while current_date <= end_date:
             day_pnl = daily_sums.get(current_date, 0.0)
             running_cumulative += day_pnl
@@ -588,14 +583,12 @@ class TradeRepository:
                 "date": current_date.isoformat(),
                 "daily_pnl": round(day_pnl, 2),
                 "cumulative_pnl": round(running_cumulative, 2),
-                "trade_count": daily_counts.get(current_date, 0),
+                "trade_count": len(daily_signal_ids.get(current_date, set())),
             })
             current_date += timedelta(days=1)
 
-        if days is not None and days > 0:
-            if len(points) > days:
-                return points[-days:]
-
+        if days is not None and days > 0 and len(points) > days:
+            return points[-days:]
         return points
 
     def list_trade_events(self, signal_id: int) -> list[dict[str, Any]]:
